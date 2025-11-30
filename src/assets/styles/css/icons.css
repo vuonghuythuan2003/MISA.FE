@@ -1,0 +1,101 @@
+.icon-default {
+    mask-image: url('../icons/icon_collection.svg');
+    display: inline-block;
+    cursor: pointer;
+    background-color: currentColor;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-repeat: no-repeat;
+    mask-position: center;
+}
+
+.icon-crm {
+    -webkit-mask-image: url('../icons/icon-crm.svg');
+    mask-image: url('../icons/icon-crm.svg');
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    background-image: url('../icons/icon-crm.svg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    width: 32px;
+    height: 32px;
+    color: #fff;
+}
+.icon-desk{
+    mask-position: 0px -272px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-customer{
+    mask-position: -224px -288px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-opportunity{
+    mask-position: -80px -48px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-quote{
+    mask-position: -64px -48px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-order{
+    mask-position: -144px -48px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-goods{
+    mask-position: -16px -48px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-report{
+    mask-position: -32px -272px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-all{
+    mask-position: -48px -272px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-folder{
+    mask-position: -208px -177px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-down{
+    mask-position: -48px -32px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-reload{
+    mask-position: -352px -32px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
