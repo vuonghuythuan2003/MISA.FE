@@ -44,10 +44,49 @@
   align-items: center;
   padding: 8px 12px;
   height: 100%;
+  width: 100%;
+  justify-content: center;
 }
 .ms-button--primary {
-  background-color: #1976d2;
+  background-color: #4262F0;
   color: white;
+  width: 57px;
+  height: 32px;
+}
+
+.ms-button--secondary {
+  background-color: #fff;
+  color: #1f2229;
+  border: 1px solid #d3d7de;
+  min-width: 78px;
+  height: 32px;
+  line-height: 20px !important;
+  border-radius: 4px;
+  font-weight: 500 !important;  
+  font-size: 13px;
+      font-feature-settings: normal;
+    font-variant: normal;
+    cursor: pointer;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.ms-button--outline-primary {
+  color: #4262F0;
+  border: 1px solid #4262F0;
+  font-feature-settings: normal;
+    font-variant: normal;
+    cursor: pointer;
+    text-align: center;
+    white-space: nowrap;
+    font-family: "Inter", Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    background-color: #FFFFFF;
+    box-sizing: border-box;
+    width: 110px;
+    font-weight: 500;
+    height: 32px;
 }
 
 .ms-button--link {

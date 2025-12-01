@@ -2,11 +2,10 @@
     mask-image: url('../icons/icon_collection.svg');
     display: inline-block;
     cursor: pointer;
-    background-color: currentColor;
-    -webkit-mask-repeat: no-repeat;
-    -webkit-mask-position: center;
-    mask-repeat: no-repeat;
-    mask-position: center;
+}
+.icon-default-background {
+    background-image: url('../icons/icon_collection.svg');
+    cursor: pointer;
 }
 
 .icon-crm {
@@ -94,6 +93,99 @@
 }
 .icon-reload{
     mask-position: -352px -32px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-search{
+    mask-position: 0px -1425px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+    z-index: 1;
+    position: absolute;
+}
+.icon-ai{
+    -webkit-mask-image: url('../icons/ai-icon-16.svg');
+    mask-image: url('../icons/ai-icon-16.svg');
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    background-image: url('../icons/ai-icon-16.svg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    width: 16px;
+    height: 16px;
+    color: #fff;
+    position: absolute;
+    right: 10px;
+}
+.icon-building{
+    mask-position: -16px -1425px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+}
+.icon-add{
+    mask-position: -240px -128px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: #ffff;
+}
+.icon-excel-import{
+    mask-position: -176px -192px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    
+}
+.icon-three-dots {
+    mask-position: -48px 0px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-list-ul{
+    mask-position: -128px -304px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-down-gray{
+    mask-position: -48px -32px  ;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-sort-setting{
+    mask-position: -272px -176px;
+    mask-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-phone{
+    background-position: -320px -48px;
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    background-color: gray;
+}
+.icon-image-customer{
+    background-position: 0px -848px;
+    background-repeat: no-repeat;
+    width: 48px;
+    height: 48px;
+    background-color: gray;
+}
+.icon-checkbox{
+    mask-position: -176px -16px;;
     mask-repeat: no-repeat;
     width: 16px;
     height: 16px;
