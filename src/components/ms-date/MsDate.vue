@@ -10,19 +10,24 @@
       :format="format"
       :picker="picker"
       class="date-picker-custom"
+      :class="{ 'date-picker-error': error }"
       :get-popup-container="(trigger) => trigger.parentElement"
       @change="handleChange"
     >
       <template #suffixIcon>
-        <div class="icon-default icon-calendar"></div>
+        <CalendarOutlined />
       </template>
     </a-date-picker>
-    <span v-if="helperText" class="helper-text">{{ helperText }}</span>
+    <div v-if="error || helperText" class="message">
+      <span v-if="error" class="error-text">{{ error }}</span>
+      <span v-else class="helper-text">{{ helperText }}</span>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from "vue";
+import { CalendarOutlined } from "@ant-design/icons-vue";
 import dayjs from "dayjs";
 
 const props = defineProps({
@@ -47,6 +52,10 @@ const props = defineProps({
     default: false,
   },
   helperText: {
+    type: String,
+    default: "",
+  },
+  error: {
     type: String,
     default: "",
   },
@@ -98,6 +107,35 @@ const handleChange = (date, dateString) => {
   margin-left: 2px;
 }
 
+.date-picker-custom :deep(.ant-picker) {
+  width: 100%;
+  height: 31px;
+  border-radius: 4px;
+  border: 1px solid #d9d9d9;
+}
+
+.date-picker-error :deep(.ant-picker) {
+  border-color: #ff4d4f !important;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.error-text {
+  color: #ff4d4f;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.helper-text {
+  color: #999;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .date-picker-custom {
   width: 100%;
 }
@@ -132,6 +170,11 @@ const handleChange = (date, dateString) => {
 .date-picker-custom :deep(.ant-picker-suffix) {
   display: flex;
   align-items: center;
+  color: #888E9C;
+}
+
+.date-picker-custom :deep(.ant-picker-suffix svg) {
+  color: #888E9C;
 }
 
 .helper-text {

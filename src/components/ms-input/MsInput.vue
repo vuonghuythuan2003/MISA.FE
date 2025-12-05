@@ -115,7 +115,8 @@ const props = defineProps({
   },
   maxlength: {
     type: [String, Number],
-    default: undefined,
+    // Mặc định cho phép nhập tối đa 300 ký tự để phù hợp các cột varchar(255+)
+    default: 300,
   },
   min: {
     type: [String, Number],

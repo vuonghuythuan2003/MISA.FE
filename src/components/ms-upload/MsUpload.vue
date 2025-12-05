@@ -10,13 +10,13 @@
   >
     <AUploadDragger
       :file-list="fileList"
+      @update:file-list="val => fileList.value = val"
       name="file"
-      :multiple="true"
-      :accept="'.xlsx,.xls'"
-      action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
+      :multiple="false"
+      :accept="'.csv'"
+      :custom-request="handleUpload"
       @change="handleChange"
       @drop="handleDrop"
-      @update:file-list="val => fileList = val"
     >
       <p class="ant-upload-drag-icon">
         <InboxOutlined />
@@ -34,6 +34,7 @@ import { ref, watch } from 'vue';
 import { Modal, UploadDragger, message } from 'ant-design-vue';
 import { InboxOutlined } from '@ant-design/icons-vue';
 import 'ant-design-vue/dist/reset.css';
+import customerAPI from '@/apis/components/CustomerAPI.js';
 
 // Định nghĩa component
 const AModal = Modal;
@@ -48,7 +49,7 @@ const props = defineProps({
 });
 
 // Emit để gửi sự kiện đóng popup về component cha
-const emit = defineEmits(['update:open']);
+const emit = defineEmits(['update:open', 'uploaded']);
 
 // Trạng thái hiển thị popup
 const isVisible = ref(props.open);
@@ -74,9 +75,24 @@ const handleChange = info => {
     console.log(info.file, info.fileList);
   }
   if (status === 'done') {
-    message.success(`Tải lên tệp ${info.file.name} thành công.`);
+    message.success(`Nhập tệp ${info.file.name} thành công.`);
   } else if (status === 'error') {
-    message.error(`Tải lên tệp ${info.file.name} thất bại.`);
+    message.error(`Nhập tệp ${info.file.name} thất bại.`);
+  }
+};
+
+// Upload CSV qua API customer/import
+const handleUpload = async ({ file, onSuccess, onError }) => {
+  try {
+    await customerAPI.importFromCsv(file);
+    onSuccess && onSuccess({});
+    message.success(`Nhập tệp ${file.name} thành công.`);
+    emit('uploaded');
+    handleClose();
+  } catch (err) {
+    console.error('Upload CSV error:', err);
+    message.error(`Nhập tệp ${file.name} thất bại.`);
+    onError && onError(err);
   }
 };
 

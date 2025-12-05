@@ -14,6 +14,14 @@ import MsPagination from "@/components/ms-paginatuion/MsPagination.vue";
 import MsButton from "@/components/ms-button/MsButton.vue";
 import customerAPI from "@/apis/components/CustomerAPI.js";
 
+// Định dạng ngày (chuỗi ISO) về dd/mm/yyyy, fallback sang giá trị gốc nếu parse không được
+const formatDate = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("vi-VN");
+};
+
 const router = useRouter();
 const route = useRoute();
 
@@ -22,7 +30,11 @@ const props = defineProps({
   searchKeyword: {
     type: String,
     default: ''
-  }
+  },
+  refreshKey: {
+    type: Number,
+    default: 0,
+  },
 });
 
 let searchTimeout;
@@ -42,6 +54,11 @@ watch(() => props.searchKeyword, (newValue) => {
   }, 300);
 });
 
+// Khi refreshKey thay đổi (import CSV xong), refetch danh sách
+watch(() => props.refreshKey, () => {
+  fetchCustomers();
+});
+
 // Dữ liệu phân trang
 const currentPage = ref(1);
 const totalPages = ref(0);
@@ -58,7 +75,7 @@ const hoveredRowId = ref(null);
 const hoveredHeaderKey = ref(null);
 
 // Sắp xếp
-const sortColumn = ref('customerId');
+const sortColumn = ref('customerCode');
 const sortDirection = ref('desc');
 
 // Tìm kiếm & Lọc
@@ -73,9 +90,9 @@ const customers = ref([]);
 const headers = [
   { key: "customerType", label: "Loại khách hàng", width: "165px" },
   { key: "customerCode", label: "Mã khách hàng ", width: "250px" },
-  { key: "customerName", label: "Tên khách hàng", width: "320px" },
-  { key: "customerTaxCode", label: "Mã số thuế", width: "150px" },
-  { key: "customerShippingAddress", label: "Địa chỉ giao hàng", width: "350px" },
+  { key: "customerName", label: "Tên khách hàng", width: "300px" },
+  { key: "customerTaxCode", label: "Mã số thuế", width: "180px" },
+  { key: "customerShippingAddress", label: "Địa chỉ (Giao hàng)", width: "200px" },
   { key: "customerPhoneNumber", label: "Điện thoại", width: "200px" },
   { key: "customerEmail", label: "Email", width: "210px" },
   { key: "lastPurchaseDate", label: "Ngày mua hàng gần nhất", width: "217px" },
@@ -162,7 +179,7 @@ const fetchCustomers = async () => {
         phone: customer.customerPhoneNumber || '-',
         taxCode: customer.customerTaxCode || '-',
         address: customer.customerShippingAddress || '-',
-        lastDate: customer.lastPurchaseDate || '-',
+        lastDate: formatDate(customer.lastPurchaseDate),
         goodsCode: customer.purchasedItemCode || '-',
         goodsName: customer.purchasedItemName || '-'
       }));
@@ -280,7 +297,7 @@ watch(() => route.fullPath, (newPath, oldPath) => {
   if (route.path === '/customer' && oldPath && oldPath !== newPath) {
     // Reset về trang 1 và sắp xếp theo ID mới nhất
     currentPage.value = 1;
-    sortColumn.value = 'customerId';
+    sortColumn.value = 'customerCode';
     sortDirection.value = 'desc';
     fetchCustomers();
   }
@@ -348,11 +365,11 @@ watch(() => route.fullPath, (newPath, oldPath) => {
 
             <td class="text-left">{{ customer.code }}</td>
 
-            <td class="text-left">{{ customer.name }}</td>
+            <td class="td-name text-left">{{ customer.name }}</td>
 
             <td class="text-dark">{{ customer.taxCode }}</td>
 
-            <td class="text-dark" :title="customer.address">
+            <td class="td-addr text-dark" :title="customer.address">
               {{ customer.address }}
             </td>
 
@@ -601,7 +618,12 @@ tbody tr:hover .td-actions {
   cursor: pointer;
   user-select: none;
 }
-
+.td-name{
+  padding-right: 30px;
+}
+.td-addr {
+  padding-right: 35px;
+}
 .th-data.active .sort-icon {
   color: #1890ff;
 }

@@ -1,20 +1,19 @@
 <script>
 import toastr from 'toastr'
-import '@/assets/styles/css/toast.css'
 
-// Cấu hình toastr - thon gọn, match với giao diện
+// Cấu hình toastr - tắt nút close, match với giao diện
 toastr.options = {
-  'closeButton': true,
+  'closeButton': false,
   'debug': false,
   'newestOnTop': true,
-  'progressBar': false,
+  'progressBar': true,
   'positionClass': 'toast-top-right',
   'preventDuplicates': true,
   'onclick': null,
   'showDuration': '200',
   'hideDuration': '300',
   'timeOut': '3000',
-  'extendedTimeOut': '500',
+  'extendedTimeOut': '1000',
   'showEasing': 'swing',
   'hideEasing': 'linear',
   'showMethod': 'fadeIn',

@@ -1,24 +1,28 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch } from "vue";
 import MsButton from "../components/ms-button/MsButton.vue";
 import MsUpload from "../components/ms-upload/MsUpload.vue";
 import CustomerLayOut from "../views/customer/CustomerLayOut.vue";
-import { useRouter } from 'vue-router'
+import { FileExcelOutlined } from "@ant-design/icons-vue";
+import { useRouter } from "vue-router";
 
-const router = useRouter()
+const router = useRouter();
 
 // Trạng thái hiển thị popup upload
 const showUploadPopup = ref(false);
 
+// Trigger để yêu cầu reload danh sách sau khi import
+const refreshKey = ref(0);
+
 // Trạng thái tìm kiếm & lọc
-const searchKeyword = ref('');
+const searchKeyword = ref("");
 let searchTimeout;
 
 // Watch searchKeyword để gọi API với debounce
 watch(searchKeyword, (newValue) => {
   // Clear timeout trước đó
   clearTimeout(searchTimeout);
-  
+
   // Đặt timeout để gọi API sau 300ms không gõ
   searchTimeout = setTimeout(() => {
     // API sẽ tự động gọi thông qua watch ở CustomerLayOut
@@ -26,84 +30,111 @@ watch(searchKeyword, (newValue) => {
   }, 300);
 });
 
-function goToAdd() {
-  router.push('/customer/add')
+function goToDeleteMultiple() {
+  router.push("/customer/delete-multiple");
 }
 
 // Mở popup nhập từ Excel
 function openExcelImport() {
   showUploadPopup.value = true;
 }
+
+// Sau khi import CSV thành công, đóng popup và tăng refresh key để CustomerLayOut fetch lại
+function handleImported() {
+  refreshKey.value += 1;
+}
 </script>
 
 <template>
   <div class="main-content-layout">
-  <div class="toolbar flex-row justify-content-space-between">
-    <!-- Bố cục thanh công cụ (phần trái) -->
-    <div class="toolbar-left flex-row align-center">
-      <!-- Dropdown Khách hàng -->
-      <div class="customer-dropdown flex-row align-center">
-        <div class="icon-default icon-folder"></div>
-        <div class="content-customer">Tất cả khách hàng</div>
-        <div class="icon-default icon-down"></div>
+    <div class="toolbar flex-row justify-content-space-between">
+      <!-- Bố cục thanh công cụ (phần trái) -->
+      <div class="toolbar-left flex-row align-center">
+        <!-- Dropdown Khách hàng -->
+        <div class="customer-dropdown flex-row align-center">
+          <div class="icon-default icon-folder"></div>
+          <div class="content-customer">Tất cả khách hàng</div>
+          <div class="icon-default icon-down"></div>
+        </div>
+        <!-- Nhóm hành động -->
+        <div class="action-group flex-row align-center">
+          <span class="action-text">Sửa</span>
+          <span class="icon-default icon-reload"></span>
+        </div>
+        <!-- Nút Xóa nhiều -->
+        <MsButton
+          class="btn-delete-multiple align-center justify-content-center" 
+          type="primary"
+          @click="goToDeleteMultiple"
+          >Xóa nhiều</MsButton
+        >
+        <!-- Nút Xuất từ CSV -->
+        <MsButton
+          class="btn-excel-export align-center justify-content-center"
+          type="link"
+          @click="openExcelImport"
+        >
+          <template #icon-left>
+            <FileExcelOutlined />
+          </template>
+          Xuất từ CSV
+        </MsButton>
       </div>
-      <!-- Nhóm hành động -->
-      <div class="action-group flex-row align-center">
-        <span class="action-text">Sửa</span>
-        <span class="icon-default icon-reload"></span>
-      </div>
-    </div>
-    <!-- Bố cục thanh công cụ (phần phải) -->
-    <div class="toolbar-right flex-row align-center">
-      <!-- Input Tìm kiếm thông minh -->
-      <div class="smart-search-input flex-row align-center">
-        <div class="icon-default icon-search"></div>
-        <input
-          v-model="searchKeyword"
-          type="text"
-          placeholder="Tìm kiếm thông minh"
-          class="search-field"
-        />
+      <!-- Bố cục thanh công cụ (phần phải) -->
+      <div class="toolbar-right flex-row align-center">
+        <!-- Input Tìm kiếm thông minh -->
+        <div class="smart-search-input flex-row align-center">
+          <div class="icon-default icon-search"></div>
+          <input
+            v-model="searchKeyword"
+            type="text"
+            placeholder="Tìm kiếm thông minh"
+            class="search-field"
+          />
 
-        <div class="icon-ai"></div>
-      </div>
-      <!-- Nút Icon Tòa nhà -->
-      <div class="btn-square-icon align-center justify-content-center">
-        <div class="icon-default icon-building"></div>
-      </div>
-      <!-- Nút Thêm -->
-      <MsButton
-        class="btn-add align-center justify-content-center"
-        icon="add"
-        type="primary"
-        @click="goToAdd"
-        >Thêm</MsButton
-      >
-      <!-- Nút Nhập từ Excel -->
-      <MsButton
-        class="btn-excel-import align-center justify-content-center"
-        icon="excel-import"
-        type="link"
-        @click="openExcelImport"
-        >Nhập từ Excel</MsButton
-      >
-      <!-- Nút More (...) -->
-      <div class="btn-more flex-row align-center justify-content-center">
-        <!-- Giả lập 3 dấu chấm bằng CSS hoặc icon -->
-        <div class="icon-default icon-three-dots"></div>
-      </div>
-      <!-- Nút View Mode (List + Arrow) -->
-      <div class="btn-view-mode flex-row align-center justify-content-center">
-        <div class="icon-default icon-list-ul"></div>
-        <div class="icon-default icon-down-gray"></div>
+          <div class="icon-ai"></div>
+        </div>
+        <!-- Nút Icon Tòa nhà -->
+        <div class="btn-square-icon align-center justify-content-center">
+          <div class="icon-default icon-building"></div>
+        </div>
+        <!-- Nút Thêm -->
+        <MsButton
+          class="btn-add align-center justify-content-center"
+          icon="add"
+          type="primary"
+          @click="goToAdd"
+          >Thêm</MsButton
+        >
+        <!-- Nút Nhập từ Excel -->
+        <MsButton
+          class="btn-excel-import align-center justify-content-center"
+          icon="excel-import"
+          type="link"
+          @click="openExcelImport"
+          >Nhập từ Excel</MsButton
+        >
+        <!-- Nút More (...) -->
+        <div class="btn-more flex-row align-center justify-content-center">
+          <!-- Giả lập 3 dấu chấm bằng CSS hoặc icon -->
+          <div class="icon-default icon-three-dots"></div>
+        </div>
+        <!-- Nút View Mode (List + Arrow) -->
+        <div class="btn-view-mode flex-row align-center justify-content-center">
+          <div class="icon-default icon-list-ul"></div>
+          <div class="icon-default icon-down-gray"></div>
+        </div>
       </div>
     </div>
-  </div>
-  <!-- Giao diện danh sách khách hàng hiển thị bên dưới thanh công cụ -->
-  <CustomerLayOut :searchKeyword="searchKeyword" />
-  
-  <!-- Popup nhập từ Excel -->
-  <MsUpload :open="showUploadPopup" @update:open="val => showUploadPopup = val" />
+    <!-- Giao diện danh sách khách hàng hiển thị bên dưới thanh công cụ -->
+    <CustomerLayOut :searchKeyword="searchKeyword" :refresh-key="refreshKey" />
+
+    <!-- Popup nhập từ Excel -->
+    <MsUpload
+      :open="showUploadPopup"
+      @update:open="(val) => (showUploadPopup = val)"
+      @uploaded="handleImported"
+    />
   </div>
 </template>
 <style scoped>
@@ -123,6 +154,8 @@ function openExcelImport() {
 .toolbar-right {
   width: 700px;
   height: 32px;
+  margin-left: 10px;
+  transform: translateX(10px);
 }
 .content-customer {
   font-size: 13px;
@@ -228,7 +261,31 @@ function openExcelImport() {
   white-space: nowrap;
   overflow: hidden;
   color: #4262f2 !important;
-  padding: 5px 16px 5px 8px !important;
+  padding: 5px 5px 5px 8px !important;
+}
+.btn-excel-import:hover {
+  background-color: rgb(236, 230, 230) !important;
+  border-color: #c4c3c3;
+  color: #0430f5 !important;
+}
+.btn-excel-export {
+  height: 30px !important;
+  margin-left: 15px;
+  font-size: 13px;
+  font-family: Inter, sans-serif;
+  background-color: #ffffff !important;
+  border: 1px solid #4262f0 !important;
+  font-feature-settings: normal;
+  font-variant: normal;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  color: #4262f2 !important;
+}
+.btn-excel-export:hover {
+  background-color: rgb(236, 230, 230) !important;
+  border-color: #c4c3c3;
+  color: #0430f5 !important;
 }
 .btn-more {
   width: 36px;
@@ -244,14 +301,13 @@ function openExcelImport() {
   white-space: nowrap;
 }
 .btn-view-mode {
-  width: 55px;
+  width: 60px;
   height: 32px;
   border: 1px solid #d3d7de !important;
   text-transform: none !important;
   font-weight: 500 !important;
   background-color: #fff;
   color: #1f2229;
-  margin-right: 15px;
   margin-left: 8px;
   margin-top: 26px;
   border-radius: 4px;
@@ -324,9 +380,21 @@ function openExcelImport() {
   background-color: #f5f5f5;
   border-color: #b8bcc4;
 }
-
 .btn-more:active {
   background-color: #e7ebfd;
   border-color: #7c869c;
 }
+.icon-down-gray {
+  margin-left: 8px;
+}
+.btn-delete-multiple{
+  width: 100px;
+  margin-left: 20px;
+  background-color: #FF0000;
+  height: 30px;
+}
+.btn-delete-multiple:hover {
+  background-color: #cc0000;  
+}
+
 </style>

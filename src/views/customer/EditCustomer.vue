@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import toastr from "toastr";
 import MsButton from "../../components/ms-button/MsButton.vue";
@@ -13,6 +13,7 @@ const isLoading = ref(false);
 // State cho ảnh đại diện
 const avatarFile = ref(null);
 const avatarPreview = ref(null);
+const avatarInput = ref(null);
 
 // Dữ liệu form
 const formData = ref({
@@ -28,13 +29,37 @@ const formData = ref({
   purchasedGoodsName: "",
 });
 
+// State cho validation errors từ backend
+const validationErrors = ref({
+  customerType: "",
+  customerCode: "",
+  customerName: "",
+  customerTaxCode: "",
+  customerAddress: "",
+  customerPhoneNumber: "",
+  customerEmail: "",
+  lastPurchaseDate: "",
+  purchasedItemCode: "",
+  purchasedItemName: "",
+});
+
+// Clear error khi user chỉnh sửa
+watch(() => formData.value.customerName, () => validationErrors.value.customerName = "");
+watch(() => formData.value.customerType, () => validationErrors.value.customerType = "");
+watch(() => formData.value.customerCode, () => validationErrors.value.customerCode = "");
+watch(() => formData.value.taxCode, () => validationErrors.value.customerTaxCode = "");
+watch(() => formData.value.address, () => validationErrors.value.customerAddress = "");
+watch(() => formData.value.phone, () => validationErrors.value.customerPhoneNumber = "");
+watch(() => formData.value.email, () => validationErrors.value.customerEmail = "");
+watch(() => formData.value.lastPurchaseDate, () => validationErrors.value.lastPurchaseDate = "");
+watch(() => formData.value.purchasedGoods, () => validationErrors.value.purchasedItemCode = "");
+watch(() => formData.value.purchasedGoodsName, () => validationErrors.value.purchasedItemName = "");
+
 // Xử lý chọn ảnh
 const handleAvatarChange = (event) => {
   const file = event.target.files?.[0];
   if (file) {
     avatarFile.value = file;
-    
-    // Tạo preview ảnh
     const reader = new FileReader();
     reader.onload = (e) => {
       avatarPreview.value = e.target.result;
@@ -43,12 +68,16 @@ const handleAvatarChange = (event) => {
   }
 };
 
+const handleAvatarClick = () => {
+  avatarInput.value?.click();
+};
+
 // Load dữ liệu khách hàng từ API
 const loadCustomerData = async () => {
   try {
     isLoading.value = true;
     const customerId = route.params.id;
-    
+
     if (!customerId) {
       toastr.error("ID khách hàng không hợp lệ");
       router.back();
@@ -65,13 +94,14 @@ const loadCustomerData = async () => {
         customerCode: customer.customerCode || "",
         customerName: customer.customerName || "",
         taxCode: customer.customerTaxCode || "",
-        address: customer.customerAddress || "",
+        address: customer.customerShippingAddress || customer.customerAddress || "",
         phone: customer.customerPhoneNumber || "",
         email: customer.customerEmail || "",
         lastPurchaseDate: customer.lastPurchaseDate || "",
         purchasedGoods: customer.purchasedItemCode || "",
         purchasedGoodsName: customer.purchasedItemName || "",
       };
+      avatarPreview.value = customer.customerAvatarUrl || null;
       document.title = `Chỉnh sửa - ${customer.customerName}`;
     }
   } catch (error) {
@@ -83,32 +113,25 @@ const loadCustomerData = async () => {
   }
 };
 
-// Validate form
-const validateForm = () => {
-  if (!formData.value.customerName.trim()) {
-    toastr.error("Vui lòng nhập tên khách hàng");
-    return false;
-  }
-  if (!formData.value.customerType.trim()) {
-    toastr.error("Vui lòng chọn loại khách hàng");
-    return false;
-  }
-  if (!formData.value.phone.trim()) {
-    toastr.error("Vui lòng nhập số điện thoại");
-    return false;
-  }
-  return true;
-};
-
 // Xử lý lưu khách hàng
 const handleSave = async () => {
-  if (!validateForm()) return;
+  validationErrors.value = {
+    customerType: "",
+    customerCode: "",
+    customerName: "",
+    customerTaxCode: "",
+    customerAddress: "",
+    customerPhoneNumber: "",
+    customerEmail: "",
+    lastPurchaseDate: "",
+    purchasedItemCode: "",
+    purchasedItemName: "",
+  };
 
   try {
     isLoading.value = true;
     const customerId = route.params.id;
-    
-    // Nếu có file ảnh, dùng endpoint with-avatar
+
     if (avatarFile.value) {
       const formDataWithFile = new FormData();
       formDataWithFile.append('file', avatarFile.value);
@@ -116,23 +139,21 @@ const handleSave = async () => {
       formDataWithFile.append('customerCode', formData.value.customerCode || '');
       formDataWithFile.append('customerName', formData.value.customerName);
       formDataWithFile.append('customerTaxCode', formData.value.taxCode);
-      formDataWithFile.append('customerAddress', formData.value.address);
+      formDataWithFile.append('customerShippingAddress', formData.value.address);
       formDataWithFile.append('customerPhoneNumber', formData.value.phone);
       formDataWithFile.append('customerEmail', formData.value.email);
       formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate || '');
       formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
       formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
 
-      const response = await customerAPI.updateWithAvatar(customerId, formDataWithFile);
-      console.log('Update response:', response.data);
+      await customerAPI.updateWithAvatar(customerId, formDataWithFile);
     } else {
-      // Nếu không có ảnh, dùng endpoint thường
       const payload = {
         customerType: formData.value.customerType,
         customerCode: formData.value.customerCode || undefined,
         customerName: formData.value.customerName,
         customerTaxCode: formData.value.taxCode,
-        customerAddress: formData.value.address,
+        customerShippingAddress: formData.value.address,
         customerPhoneNumber: formData.value.phone,
         customerEmail: formData.value.email,
         lastPurchaseDate: formData.value.lastPurchaseDate || null,
@@ -140,75 +161,48 @@ const handleSave = async () => {
         purchasedItemName: formData.value.purchasedGoodsName,
       };
 
-      const response = await customerAPI.update(customerId, payload);
-      console.log('Update response:', response.data);
+      await customerAPI.update(customerId, payload);
     }
-    
+
     toastr.success(`Đã cập nhật khách hàng "${formData.value.customerName}" thành công`);
-    router.push('/customer');
+    router.push({ path: '/customer', query: { sortBy: 'customerCode', order: 'desc' } });
   } catch (error) {
     console.error('Lỗi khi cập nhật khách hàng:', error);
-    toastr.error('Không thể cập nhật khách hàng. Vui lòng kiểm tra lại thông tin.');
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-// Xử lý lưu và thêm mới
-const handleSaveAndAdd = async () => {
-  if (!validateForm()) return;
-
-  try {
-    isLoading.value = true;
-    const customerId = route.params.id;
-    
-    // Nếu có file ảnh, dùng endpoint with-avatar
-    if (avatarFile.value) {
-      const formDataWithFile = new FormData();
-      formDataWithFile.append('file', avatarFile.value);
-      formDataWithFile.append('customerType', formData.value.customerType);
-      formDataWithFile.append('customerCode', formData.value.customerCode || '');
-      formDataWithFile.append('customerName', formData.value.customerName);
-      formDataWithFile.append('customerTaxCode', formData.value.taxCode);
-      formDataWithFile.append('customerAddress', formData.value.address);
-      formDataWithFile.append('customerPhoneNumber', formData.value.phone);
-      formDataWithFile.append('customerEmail', formData.value.email);
-      formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate || '');
-      formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
-      formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
-
-      const response = await customerAPI.updateWithAvatar(customerId, formDataWithFile);
-      console.log('Update response:', response.data);
-    } else {
-      // Nếu không có ảnh, dùng endpoint thường
-      const payload = {
-        customerType: formData.value.customerType,
-        customerCode: formData.value.customerCode || undefined,
-        customerName: formData.value.customerName,
-        customerTaxCode: formData.value.taxCode,
-        customerAddress: formData.value.address,
-        customerPhoneNumber: formData.value.phone,
-        customerEmail: formData.value.email,
-        lastPurchaseDate: formData.value.lastPurchaseDate || null,
-        purchasedItemCode: formData.value.purchasedGoods,
-        purchasedItemName: formData.value.purchasedGoodsName,
+    if (error.response?.data?.errors) {
+      const errors = error.response.data.errors;
+      const fieldMapping = {
+        'CustomerType': 'customerType',
+        'CustomerCode': 'customerCode',
+        'CustomerName': 'customerName',
+        'CustomerTaxCode': 'customerTaxCode',
+        'CustomerAddress': 'customerAddress',
+        'CustomerShippingAddress': 'customerAddress',
+        'CustomerPhoneNumber': 'customerPhoneNumber',
+        'CustomerEmail': 'customerEmail',
+        'LastPurchaseDate': 'lastPurchaseDate',
+        'PurchasedItemCode': 'purchasedItemCode',
+        'PurchasedItemName': 'purchasedItemName',
       };
 
-      const response = await customerAPI.update(customerId, payload);
-      console.log('Update response:', response.data);
+      for (const [field, messages] of Object.entries(errors)) {
+        const errorMessage = Array.isArray(messages) ? messages[0] : messages;
+        const frontendField = fieldMapping[field] || field.charAt(0).toLowerCase() + field.slice(1);
+
+        if (validationErrors.value.hasOwnProperty(frontendField)) {
+          validationErrors.value[frontendField] = errorMessage;
+        }
+      }
+      toastr.error('Vui lòng kiểm tra lại thông tin nhập vào');
+    } else if (error.response?.data?.message) {
+      toastr.error(error.response.data.message);
+    } else {
+      toastr.error('Không thể cập nhật khách hàng. Vui lòng kiểm tra lại thông tin.');
     }
-    
-    toastr.success(`Đã cập nhật khách hàng "${formData.value.customerName}" thành công`);
-    router.push('/customer/add');
-  } catch (error) {
-    console.error('Lỗi khi cập nhật khách hàng:', error);
-    toastr.error('Không thể cập nhật khách hàng. Vui lòng kiểm tra lại thông tin.');
   } finally {
     isLoading.value = false;
   }
 };
 
-// Đặt tiêu đề tab trình duyệt khi vào trang
 onMounted(() => {
   document.title = "Chỉnh sửa Khách hàng";
   loadCustomerData();
@@ -231,7 +225,6 @@ onMounted(() => {
       <!-- Bố cục thanh công cụ (phần phải) -->
       <div class="toolbar-right flex-row align-center">
         <MsButton type="secondary" @click="router.back()">Hủy bỏ</MsButton>
-        <MsButton type="outline-primary" @click="handleSaveAndAdd" :disabled="isLoading">Lưu và thêm</MsButton>
         <MsButton type="primary" @click="handleSave" :disabled="isLoading">Lưu</MsButton>
       </div>
     </div>
@@ -241,7 +234,7 @@ onMounted(() => {
       <!-- Phần ảnh đại diện -->
       <div class="section-image">
         <div class="title-image">Ảnh</div>
-        <div class="avatar-wrapper" @click="$refs.avatarInput?.click()">
+        <div class="avatar-wrapper" @click="handleAvatarClick">
           <img v-if="avatarPreview" :src="avatarPreview" alt="Avatar preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" />
           <div v-else class="icon-default-background icon-image-customer"></div>
           <input 
@@ -262,22 +255,24 @@ onMounted(() => {
           <!-- Cột trái -->
           <div class="col-left">
             <div class="form-item flex-row align-center">
-              <label class="form-label">Loại khách hàng</label>
+              <label class="form-label">Loại khách hàng <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.customerType"
                   placeholder="- Không chọn -"
                   readonly
+                  :error="validationErrors.customerType"
                 />
               </div>
             </div>
 
             <div class="form-item flex-row align-center">
-              <label class="form-label">Mã khách hàng</label>
+              <label class="form-label">Mã khách hàng <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.customerCode"
                   placeholder="Mã tự sinh"
+                  :error="validationErrors.customerCode"
                 />
               </div>
             </div>
@@ -288,24 +283,29 @@ onMounted(() => {
                 <MsInput
                   v-model="formData.customerName"
                   :required="true"
+                  :error="validationErrors.customerName"
                 />
               </div>
             </div>
 
             <div class="form-item flex-row align-center">
-              <label class="form-label">Mã số thuế</label>
+              <label class="form-label">Điện thoại <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
-                  v-model="formData.taxCode"
+                  v-model="formData.phone"
+                  type="tel"
+                  :error="validationErrors.customerPhoneNumber"
                 />
               </div>
             </div>
 
             <div class="form-item flex-row align-center">
-              <label class="form-label">Địa chỉ (Giao hàng)</label>
+              <label class="form-label">Email <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
-                  v-model="formData.address"
+                  v-model="formData.email"
+                  type="email"
+                  :error="validationErrors.customerEmail"
                 />
               </div>
             </div>
@@ -314,21 +314,21 @@ onMounted(() => {
           <!-- Cột phải -->
           <div class="col-right">
             <div class="form-item flex-row align-center">
-              <label class="form-label">Điện thoại</label>
+              <label class="form-label">Mã số thuế <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
-                  v-model="formData.phone"
-                  type="tel"
+                  v-model="formData.taxCode"
+                  :error="validationErrors.customerTaxCode"
                 />
               </div>
             </div>
 
             <div class="form-item flex-row align-center">
-              <label class="form-label">Email</label>
+              <label class="form-label">Địa chỉ (Giao hàng) <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
-                  v-model="formData.email"
-                  type="email"
+                  v-model="formData.address"
+                  :error="validationErrors.customerAddress"
                 />
               </div>
             </div>
@@ -340,6 +340,7 @@ onMounted(() => {
                   v-model="formData.lastPurchaseDate"
                   type="text"
                   placeholder="dd/mm/yyyy"
+                  :error="validationErrors.lastPurchaseDate"
                 />
               </div>
             </div>
@@ -349,6 +350,7 @@ onMounted(() => {
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.purchasedGoods"
+                  :error="validationErrors.purchasedItemCode"
                 />
               </div>
             </div>
@@ -358,6 +360,7 @@ onMounted(() => {
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.purchasedGoodsName"
+                  :error="validationErrors.purchasedItemName"
                 />
               </div>
             </div>
@@ -395,8 +398,9 @@ onMounted(() => {
   font-family: Inter, sans-serif;
   padding: 0;
   color: #1f2229;
-  margin-left: 20px;
+  margin-left: 16px;
   margin-right: 16px;
+  margin-top: 5px;
 }
 
 .dropdown-trigger {
@@ -484,11 +488,11 @@ onMounted(() => {
 }
 
 .section-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
   font-family: Inter, sans-serif;
   color: #1f2229;
-  margin: 20px 0 16px 0;
+  margin: 20px 0 20px 0;
 }
 
 .form-grid {
@@ -525,11 +529,11 @@ onMounted(() => {
   font-family: Inter, sans-serif;
   display: inline-flex;
   align-items: center;
-  width: 140px;
-  min-width: 140px;
-  flex: 0 0 140px;
+  width: 160px;
+  min-width: 160px;
+  flex: 0 0 160px;
   color: #1f2229;
-  padding-top: 6px;
+  padding-top: 8px;
 }
 
 .input-wrapper {
@@ -555,7 +559,8 @@ onMounted(() => {
 }
 
 .input-wrapper :deep(.ms-input__message) {
-  display: none;
+  display: block; /* allow error text to show */
+  margin-top: 4px;
 }
 
 .required {

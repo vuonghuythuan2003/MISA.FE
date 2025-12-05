@@ -1,25 +1,28 @@
 <template>
-  <div class="ms-selected-wrapper">
-    <a-select
-      :value="modelValue"
-      show-search
-      :placeholder="placeholder"
-      class="custom-select"
-      :class="{ 'flex-1': hasButton }"
-      :options="options"
-      :filter-option="filterOption"
-      :get-popup-container="(trigger) => trigger.parentElement"
-      @focus="handleFocus"
-      @blur="handleBlur"
-      @change="handleChange"
-    >
-      <template #suffixIcon>
-        <div class="icon-default-background icon-type-customer"></div>
-      </template>
-    </a-select>
-    <button v-if="hasButton" class="btn-more" @click="handleButtonClick">
-      <div class="icon-default icon-other"></div>
-    </button>
+  <div class="ms-selected">
+    <div class="ms-selected-wrapper" :class="{ 'ms-selected--error': error }">
+      <a-select
+        :value="modelValue"
+        show-search
+        :placeholder="placeholder"
+        class="custom-select"
+        :class="{ 'flex-1': hasButton }"
+        :options="options"
+        :filter-option="filterOption"
+        :get-popup-container="(trigger) => trigger.parentElement"
+        @focus="handleFocus"
+        @blur="handleBlur"
+        @change="handleChange"
+      >
+        <template #suffixIcon>
+          <div class="icon-default-background icon-type-customer"></div>
+        </template>
+      </a-select>
+      <button v-if="hasButton" class="btn-more" @click="handleButtonClick">
+        <div class="icon-default icon-other"></div>
+      </button>
+    </div>
+    <div v-if="error" class="ms-selected__error">{{ error }}</div>
   </div>
 </template>
 
@@ -42,6 +45,10 @@ const props = defineProps({
   hasButton: {
     type: Boolean,
     default: false,
+  },
+  error: {
+    type: String,
+    default: "",
   },
 });
 
@@ -69,15 +76,30 @@ const filterOption = (input, option) => {
 </script>
 
 <style scoped>
+.ms-selected {
+  width: 100%;
+}
+
 .ms-selected-wrapper {
   display: flex;
   gap: 0;
   width: 100%;
 }
 
+.ms-selected--error .custom-select :deep(.ant-select-selector) {
+  border-color: #faad14 !important; /* match warning/yellow style */
+}
+
 .ms-selected-wrapper .flex-1 :deep(.ant-select-selector) {
   border-top-right-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
+}
+
+.ms-selected__error {
+  color: #faad14; /* yellow warning text */
+  font-size: 12px;
+  margin-top: 4px;
+  line-height: 1.5;
 }
 
 /* Custom Ant Design Select */
@@ -104,7 +126,6 @@ const filterOption = (input, option) => {
 .flex-1 {
   flex: 1;
 }
-
 .btn-more {
   width: 36px;
   height: 31px;

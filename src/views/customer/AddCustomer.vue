@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import toastr from "toastr";
 import MsButton from "../../components/ms-button/MsButton.vue";
 import MsInput from "../../components/ms-input/MsInput.vue";
 import MsSelected from "../../components/ms-selected/MsSelected.vue";
+import MsDate from "../../components/ms-date/MsDate.vue";
 import customerAPI from "@/apis/components/CustomerAPI.js";
 
 const router = useRouter();
@@ -20,6 +21,7 @@ const customerTypeOptions = [
 // State cho ảnh đại diện
 const avatarFile = ref(null);
 const avatarPreview = ref(null);
+const avatarInput = ref(null);
 
 // Dữ liệu form
 const formData = ref({
@@ -34,6 +36,91 @@ const formData = ref({
   purchasedGoods: "",
   purchasedGoodsName: "",
 });
+
+// State cho validation errors từ backend
+const validationErrors = ref({
+  customerType: "",
+  customerCode: "",
+  customerName: "",
+  customerTaxCode: "",
+  customerShippingAddress: "",
+  customerPhoneNumber: "",
+  customerEmail: "",
+  lastPurchaseDate: "",
+  purchasedItemCode: "",
+  purchasedItemName: "",
+});
+
+// Clear error khi user nhập dữ liệu
+watch(
+  () => formData.value.customerType,
+  () => {
+    validationErrors.value.customerType = "";
+  }
+);
+
+watch(
+  () => formData.value.customerCode,
+  () => {
+    validationErrors.value.customerCode = "";
+  }
+);
+
+watch(
+  () => formData.value.customerName,
+  () => {
+    validationErrors.value.customerName = "";
+  }
+);
+
+watch(
+  () => formData.value.taxCode,
+  () => {
+    validationErrors.value.customerTaxCode = "";
+  }
+);
+
+watch(
+  () => formData.value.shippingAddress,
+  () => {
+    validationErrors.value.customerShippingAddress = "";
+  }
+);
+
+watch(
+  () => formData.value.phone,
+  () => {
+    validationErrors.value.customerPhoneNumber = "";
+  }
+);
+
+watch(
+  () => formData.value.email,
+  () => {
+    validationErrors.value.customerEmail = "";
+  }
+);
+
+watch(
+  () => formData.value.lastPurchaseDate,
+  () => {
+    validationErrors.value.lastPurchaseDate = "";
+  }
+);
+
+watch(
+  () => formData.value.purchasedGoods,
+  () => {
+    validationErrors.value.purchasedItemCode = "";
+  }
+);
+
+watch(
+  () => formData.value.purchasedGoodsName,
+  () => {
+    validationErrors.value.purchasedItemName = "";
+  }
+);
 
 // Xử lý chọn ảnh
 const handleAvatarChange = (event) => {
@@ -50,71 +137,95 @@ const handleAvatarChange = (event) => {
   }
 };
 
-// Validate form
-const validateForm = () => {
-  if (!formData.value.customerName.trim()) {
-    toastr.error("Vui lòng nhập tên khách hàng");
-    return false;
-  }
-  if (!formData.value.customerType.trim()) {
-    toastr.error("Vui lòng chọn loại khách hàng");
-    return false;
-  }
-  if (!formData.value.phone.trim()) {
-    toastr.error("Vui lòng nhập số điện thoại");
-    return false;
-  }
-  return true;
+const handleAvatarClick = () => {
+  avatarInput.value?.click();
 };
 
 // Xử lý lưu khách hàng
 const handleSave = async () => {
-  if (!validateForm()) return;
+  // Reset validation errors
+  validationErrors.value = {
+    customerType: "",
+    customerCode: "",
+    customerName: "",
+    customerTaxCode: "",
+    customerShippingAddress: "",
+    customerPhoneNumber: "",
+    customerEmail: "",
+    lastPurchaseDate: "",
+    purchasedItemCode: "",
+    purchasedItemName: "",
+  };
 
   try {
     isLoading.value = true;
     
-    // Nếu có file ảnh, dùng endpoint with-avatar
+    // Tạo FormData để gửi lên backend (bao gồm cả file ảnh nếu có)
+    const formDataWithFile = new FormData();
+    
+    // Append file ảnh nếu có
     if (avatarFile.value) {
-      const formDataWithFile = new FormData();
       formDataWithFile.append('file', avatarFile.value);
-      formDataWithFile.append('customerType', formData.value.customerType);
-      formDataWithFile.append('customerCode', formData.value.customerCode || '');
-      formDataWithFile.append('customerName', formData.value.customerName);
-      formDataWithFile.append('customerTaxCode', formData.value.taxCode);
-      formDataWithFile.append('customerShippingAddress', formData.value.shippingAddress);
-      formDataWithFile.append('customerPhoneNumber', formData.value.phone);
-      formDataWithFile.append('customerEmail', formData.value.email);
-      formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate || '');
-      formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
-      formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
-
-      const response = await customerAPI.createWithAvatar(formDataWithFile);
-      console.log('Create response:', response.data);
-    } else {
-      // Nếu không có ảnh, dùng endpoint thường
-      const payload = {
-        customerType: formData.value.customerType,
-        customerCode: formData.value.customerCode || undefined,
-        customerName: formData.value.customerName,
-        customerTaxCode: formData.value.taxCode,
-        customerShippingAddress: formData.value.shippingAddress,
-        customerPhoneNumber: formData.value.phone,
-        customerEmail: formData.value.email,
-        lastPurchaseDate: formData.value.lastPurchaseDate || null,
-        purchasedItemCode: formData.value.purchasedGoods,
-        purchasedItemName: formData.value.purchasedGoodsName,
-      };
-
-      const response = await customerAPI.create(payload);
-      console.log('Create response:', response.data);
     }
     
+    // Append các trường dữ liệu
+    formDataWithFile.append('customerType', formData.value.customerType);
+    formDataWithFile.append('customerCode', formData.value.customerCode);
+    formDataWithFile.append('customerName', formData.value.customerName);
+    formDataWithFile.append('customerTaxCode', formData.value.taxCode);
+    formDataWithFile.append('customerShippingAddress', formData.value.shippingAddress);
+    formDataWithFile.append('customerPhoneNumber', formData.value.phone);
+    formDataWithFile.append('customerEmail', formData.value.email);
+    formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate);
+    formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
+    formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
+
+    // Gọi API (backend sẽ tự xử lý validation, parse date, upload ảnh)
+    const response = await customerAPI.createWithAvatar(formDataWithFile);
+    
     toastr.success(`Đã thêm khách hàng "${formData.value.customerName}" thành công`);
-    router.push({ path: '/customer', query: { sortBy: 'customerId', order: 'desc' } });
+    router.push({ path: '/customer', query: { sortBy: 'customerCode', order: 'desc' } });
   } catch (error) {
-    console.error('Lỗi khi thêm khách hàng:', error);
-    toastr.error('Không thể thêm khách hàng. Vui lòng kiểm tra lại thông tin.');
+    console.error('Lỗi khi thêm khách hàng:', error);    
+    // Hiển thị lỗi từ backend dưới các ô input
+    if (error.response?.data?.errors) {
+      const errors = error.response.data.errors;
+      console.log('Errors từ backend:', errors);
+      
+      // Map field name từ backend sang frontend state
+      const fieldMapping = {
+        'CustomerType': 'customerType',
+        'CustomerCode': 'customerCode',
+        'CustomerName': 'customerName',
+        'CustomerTaxCode': 'customerTaxCode',
+        'CustomerShippingAddress': 'customerShippingAddress',
+        'CustomerPhoneNumber': 'customerPhoneNumber',
+        'CustomerEmail': 'customerEmail',
+        'LastPurchaseDate': 'lastPurchaseDate',
+        'PurchasedItemCode': 'purchasedItemCode',
+        'PurchasedItemName': 'purchasedItemName',
+      };
+      
+      for (const [field, messages] of Object.entries(errors)) {
+        const errorMessage = Array.isArray(messages) ? messages[0] : messages;
+        const frontendField = fieldMapping[field] || field.charAt(0).toLowerCase() + field.slice(1);
+        
+        console.log(`Setting ${frontendField} = ${errorMessage}`);
+        
+        if (validationErrors.value.hasOwnProperty(frontendField)) {
+          validationErrors.value[frontendField] = errorMessage;
+        } else {
+          console.warn(`Field ${frontendField} không tồn tại trong validationErrors`);
+        }
+      }
+      
+      console.log('validationErrors sau khi set:', validationErrors.value);
+      toastr.error('Vui lòng kiểm tra lại thông tin nhập vào');
+    } else if (error.response?.data?.message) {
+      toastr.error(error.response.data.message);
+    } else {
+      toastr.error('Không thể thêm khách hàng. Vui lòng kiểm tra lại thông tin.');
+    }
   } finally {
     isLoading.value = false;
   }
@@ -122,48 +233,48 @@ const handleSave = async () => {
 
 // Xử lý lưu và thêm tiếp
 const handleSaveAndAdd = async () => {
-  if (!validateForm()) return;
+  // Reset validation errors
+  validationErrors.value = {
+    customerType: "",
+    customerCode: "",
+    customerName: "",
+    customerTaxCode: "",
+    customerShippingAddress: "",
+    customerPhoneNumber: "",
+    customerEmail: "",
+    lastPurchaseDate: "",
+    purchasedItemCode: "",
+    purchasedItemName: "",
+  };
 
   try {
     isLoading.value = true;
     
-    // Nếu có file ảnh, dùng endpoint with-avatar
+    // Tạo FormData để gửi lên backend (bao gồm cả file ảnh nếu có)
+    const formDataWithFile = new FormData();
+    
+    // Append file ảnh nếu có
     if (avatarFile.value) {
-      const formDataWithFile = new FormData();
       formDataWithFile.append('file', avatarFile.value);
-      formDataWithFile.append('customerType', formData.value.customerType);
-      formDataWithFile.append('customerCode', formData.value.customerCode || '');
-      formDataWithFile.append('customerName', formData.value.customerName);
-      formDataWithFile.append('customerTaxCode', formData.value.taxCode);
-      formDataWithFile.append('customerShippingAddress', formData.value.shippingAddress);
-      formDataWithFile.append('customerPhoneNumber', formData.value.phone);
-      formDataWithFile.append('customerEmail', formData.value.email);
-      formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate || '');
-      formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
-      formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
-
-      const response = await customerAPI.createWithAvatar(formDataWithFile);
-      console.log('Create response:', response.data);
-    } else {
-      // Nếu không có ảnh, dùng endpoint thường
-      const payload = {
-        customerType: formData.value.customerType,
-        customerCode: formData.value.customerCode || undefined,
-        customerName: formData.value.customerName,
-        customerTaxCode: formData.value.taxCode,
-        customerShippingAddress: formData.value.shippingAddress,
-        customerPhoneNumber: formData.value.phone,
-        customerEmail: formData.value.email,
-        lastPurchaseDate: formData.value.lastPurchaseDate || null,
-        purchasedItemCode: formData.value.purchasedGoods,
-        purchasedItemName: formData.value.purchasedGoodsName,
-      };
-
-      const response = await customerAPI.create(payload);
-      console.log('Create response:', response.data);
     }
     
+    // Append các trường dữ liệu
+    formDataWithFile.append('customerType', formData.value.customerType);
+    formDataWithFile.append('customerCode', formData.value.customerCode);
+    formDataWithFile.append('customerName', formData.value.customerName);
+    formDataWithFile.append('customerTaxCode', formData.value.taxCode);
+    formDataWithFile.append('customerShippingAddress', formData.value.shippingAddress);
+    formDataWithFile.append('customerPhoneNumber', formData.value.phone);
+    formDataWithFile.append('customerEmail', formData.value.email);
+    formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate);
+    formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
+    formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
+
+    // Gọi API (backend sẽ tự xử lý validation, parse date, upload ảnh)
+    const response = await customerAPI.createWithAvatar(formDataWithFile);
+    
     toastr.success(`Đã thêm khách hàng "${formData.value.customerName}" thành công`);
+    
     // Reset form cho việc thêm tiếp
     formData.value = {
       customerType: "",
@@ -179,10 +290,45 @@ const handleSaveAndAdd = async () => {
     };
     avatarFile.value = null;
     avatarPreview.value = null;
+    
+    // Gọi API sinh mã mới cho khách hàng tiếp theo
     generateCustomerCode();
   } catch (error) {
     console.error('Lỗi khi thêm khách hàng:', error);
-    toastr.error('Không thể thêm khách hàng. Vui lòng kiểm tra lại thông tin.');
+    
+    // Hiển thị lỗi từ backend dưới các ô input
+    if (error.response?.data?.errors) {
+      const errors = error.response.data.errors;
+      
+      // Map field name từ backend sang frontend state
+      const fieldMapping = {
+        'CustomerType': 'customerType',
+        'CustomerCode': 'customerCode',
+        'CustomerName': 'customerName',
+        'CustomerTaxCode': 'customerTaxCode',
+        'CustomerShippingAddress': 'customerShippingAddress',
+        'CustomerPhoneNumber': 'customerPhoneNumber',
+        'CustomerEmail': 'customerEmail',
+        'LastPurchaseDate': 'lastPurchaseDate',
+        'PurchasedItemCode': 'purchasedItemCode',
+        'PurchasedItemName': 'purchasedItemName',
+      };
+      
+      for (const [field, messages] of Object.entries(errors)) {
+        const errorMessage = Array.isArray(messages) ? messages[0] : messages;
+        const frontendField = fieldMapping[field] || field.charAt(0).toLowerCase() + field.slice(1);
+        
+        if (validationErrors.value.hasOwnProperty(frontendField)) {
+          validationErrors.value[frontendField] = errorMessage;
+        }
+      }
+      
+      toastr.error('Vui lòng kiểm tra lại thông tin nhập vào');
+    } else if (error.response?.data?.message) {
+      toastr.error(error.response.data.message);
+    } else {
+      toastr.error('Không thể thêm khách hàng. Vui lòng kiểm tra lại thông tin.');
+    }
   } finally {
     isLoading.value = false;
   }
@@ -247,7 +393,7 @@ onMounted(() => {
       <!-- Phần ảnh đại diện -->
       <div class="section-image">
         <div class="title-image">Ảnh</div>
-        <div class="avatar-wrapper" @click="$refs.avatarInput?.click()">
+        <div class="avatar-wrapper" @click="handleAvatarClick">
           <img v-if="avatarPreview" :src="avatarPreview" alt="Avatar preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" />
           <div v-else class="icon-default-background icon-image-customer"></div>
           <input 
@@ -273,6 +419,7 @@ onMounted(() => {
                 <MsSelected
                   v-model="formData.customerType"
                   :options="customerTypeOptions"
+                  :error="validationErrors.customerType"
                   placeholder="- Chọn loại khách hàng -"
                 />
               </div>
@@ -284,6 +431,8 @@ onMounted(() => {
                 <MsInput
                   v-model="formData.customerCode"
                   placeholder="Mã tự sinh"
+                  :error="validationErrors.customerCode"
+                  :readonly="true"
                 />
               </div>
             </div>
@@ -294,6 +443,7 @@ onMounted(() => {
                 <MsInput
                   v-model="formData.customerName"
                   :required="true"
+                  :error="validationErrors.customerName"
                 />
               </div>
             </div>
@@ -304,6 +454,7 @@ onMounted(() => {
                 <MsInput
                   v-model="formData.phone"
                   type="tel"
+                  :error="validationErrors.customerPhoneNumber"
                 />
               </div>
             </div>
@@ -314,6 +465,7 @@ onMounted(() => {
                 <MsInput
                   v-model="formData.email"
                   type="email"
+                  :error="validationErrors.customerEmail"
                 />
               </div>
             </div>
@@ -326,6 +478,7 @@ onMounted(() => {
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.taxCode"
+                  :error="validationErrors.customerTaxCode"
                 />
               </div>
             </div>
@@ -335,6 +488,7 @@ onMounted(() => {
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.shippingAddress"
+                  :error="validationErrors.customerShippingAddress"
                 />
               </div>
             </div>
@@ -342,10 +496,11 @@ onMounted(() => {
             <div class="form-item flex-row align-center">
               <label class="form-label">Ngày mua hàng gần nhất</label>
               <div class="input-wrapper">
-                <MsInput
+                <MsDate
                   v-model="formData.lastPurchaseDate"
-                  type="text"
+                  :error="validationErrors.lastPurchaseDate"
                   placeholder="dd/mm/yyyy"
+                  format="DD/MM/YYYY"
                 />
               </div>
             </div>
@@ -580,7 +735,41 @@ onMounted(() => {
 }
 
 .input-wrapper :deep(.ms-input__message) {
-  display: none;
+  display: block; 
+  margin-top: 4px;
+}
+
+/* Ghi đè style của MsDate để phù hợp với form */
+.input-wrapper :deep(.input-container) {
+  gap: 0;
+}
+
+.input-wrapper :deep(.date-picker-custom .ant-picker) {
+  height: 32px;
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  background-color: #ffffff;
+  border: 1px solid #dfe4ea;
+}
+
+.input-wrapper :deep(.date-picker-custom .ant-picker:hover) {
+  border-color: #bfc5cc;
+}
+
+.input-wrapper :deep(.date-picker-custom .ant-picker-focused) {
+  border-color: #4262f0;
+  box-shadow: 0 0 0 2px rgba(66, 98, 240, 0.1);
+}
+
+.input-wrapper :deep(.date-picker-custom .ant-picker-input > input) {
+  font-size: 13px;
+  color: #1f2229;
+  font-family: Inter, sans-serif;
+}
+
+.input-wrapper :deep(.date-picker-custom .ant-picker-input > input::placeholder) {
+  color: #9da5b1;
 }
 
 .combo-box {

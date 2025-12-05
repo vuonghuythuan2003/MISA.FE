@@ -93,6 +93,7 @@ function goToHome() {
   justify-content: flex-end;
   padding-right: 10px;
   margin-top: 11px;
+  margin-right: 5px;
 }
 .avatar {
   width: 30px;
