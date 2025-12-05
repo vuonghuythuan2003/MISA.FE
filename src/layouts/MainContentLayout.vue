@@ -1,16 +1,22 @@
 <script setup>
+import { ref } from 'vue';
 import MsButton from "../components/ms-button/MsButton.vue";
+import MsUpload from "../components/ms-upload/MsUpload.vue";
 import CustomerLayOut from "../views/customer/CustomerLayOut.vue";
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
+// Trạng thái hiển thị popup upload
+const showUploadPopup = ref(false);
+
 function goToAdd() {
   router.push('/customer/add')
 }
 
-function goToEdit() {
-  router.push('/customer/edit')
+// Mở popup nhập từ Excel
+function openExcelImport() {
+  showUploadPopup.value = true;
 }
 </script>
 
@@ -26,7 +32,7 @@ function goToEdit() {
         <div class="icon-default icon-down"></div>
       </div>
       <!-- Nhóm hành động -->
-      <div class="action-group flex-row align-center" @click="goToEdit">
+      <div class="action-group flex-row align-center">
         <span class="action-text">Sửa</span>
         <span class="icon-default icon-reload"></span>
       </div>
@@ -61,6 +67,7 @@ function goToEdit() {
         class="btn-excel-import align-center justify-content-center"
         icon="excel-import"
         type="link"
+        @click="openExcelImport"
         >Nhập từ Excel</MsButton
       >
       <!-- Nút More (...) -->
@@ -77,6 +84,9 @@ function goToEdit() {
   </div>
   <!-- Giao diện danh sách khách hàng hiển thị bên dưới thanh công cụ -->
   <CustomerLayOut />
+  
+  <!-- Popup nhập từ Excel -->
+  <MsUpload :open="showUploadPopup" @update:open="val => showUploadPopup = val" />
   </div>
 </template>
 <style scoped>
@@ -155,9 +165,9 @@ function goToEdit() {
   background-color: #7d6df0 !important;
   margin-left: 8px;
 }
-.excel-import {
+.btn-excel-import :deep(.icon-excel-import) {
   background-color: #4262f2 !important;
-  color: #4262f2 !important;
+  margin-left: -10px;
 }
 .icon-building {
   background-color: #7d6df0 !important;

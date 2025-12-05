@@ -62,7 +62,7 @@ const formData = ref({
           <!-- Cột trái -->
           <div class="col-left">
             <div class="form-item flex-row align-center">
-              <label class="form-label">Loại khách hàng</label>
+              <label class="form-label">Loại khách hàng <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.customerType"
@@ -73,7 +73,7 @@ const formData = ref({
             </div>
 
             <div class="form-item flex-row align-center">
-              <label class="form-label">Mã khách hàng</label>
+              <label class="form-label">Mã khách hàng <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.customerCode"
@@ -93,7 +93,7 @@ const formData = ref({
             </div>
 
             <div class="form-item flex-row align-center">
-              <label class="form-label">Mã số thuế</label>
+              <label class="form-label">Mã số thuế <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.taxCode"
@@ -102,7 +102,7 @@ const formData = ref({
             </div>
 
             <div class="form-item flex-row align-center">
-              <label class="form-label">Địa chỉ (Giao hàng)</label>
+              <label class="form-label">Địa chỉ (Giao hàng) <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.address"
@@ -114,7 +114,7 @@ const formData = ref({
           <!-- Cột phải -->
           <div class="col-right">
             <div class="form-item flex-row align-center">
-              <label class="form-label">Điện thoại</label>
+              <label class="form-label">Điện thoại <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.phone"
@@ -124,7 +124,7 @@ const formData = ref({
             </div>
 
             <div class="form-item flex-row align-center">
-              <label class="form-label">Email</label>
+              <label class="form-label">Email <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.email"
@@ -197,6 +197,7 @@ const formData = ref({
   color: #1f2229;
   margin-left: 20px;
   margin-right: 16px;
+  margin-top: 5px;
 }
 
 .dropdown-trigger {

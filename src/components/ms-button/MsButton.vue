@@ -1,8 +1,12 @@
 <template>
   <button :class="['ms-button', `ms-button--${type}`]">
     <div class="ms-button__main">
+      <!-- Slot cho icon tùy chỉnh bên trái -->
+      <span v-if="$slots['icon-left']" class="ms-button__icon ms-button__icon--left">
+        <slot name="icon-left"></slot>
+      </span>
       <i
-        v-if="icon && positionIcon === 'left'"
+        v-else-if="icon && positionIcon === 'left'"
         :class="[
           'ms-button__icon',
           'ms-button__icon--left',
@@ -10,7 +14,7 @@
           `icon-${icon}`,
         ]"
       ></i>
-      <span class="ms-button__content"><slot /></span>
+      <span v-if="$slots.default" class="ms-button__content"><slot /></span>
       <i
         v-if="icon && positionIcon === 'right'"
         :class="[
@@ -103,6 +107,44 @@
 .ms-button--danger {
   background-color: #dc3545;
   color: white;
+}
+
+.ms-button--icon-only {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+}
+
+.ms-button--icon-only .ms-button__main {
+  padding: 0;
+  justify-content: center;
+}
+
+.ms-button--icon-only:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.ms-button--icon-only-danger {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  color: #ff4d4f;
+}
+
+.ms-button--icon-only-danger .ms-button__main {
+  padding: 0;
+  justify-content: center;
+}
+
+.ms-button--icon-only-danger:hover {
+  background-color: #fff1f0;
+  color: #cf1322;
 }
 
 .ms-button__content {
