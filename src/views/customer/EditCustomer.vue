@@ -1,12 +1,18 @@
 <script setup>
 import { onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import toastr from "toastr";
 import MsButton from "../../components/ms-button/MsButton.vue";
 import MsInput from "../../components/ms-input/MsInput.vue";
+import customerAPI from "@/apis/components/CustomerAPI.js";
 
-// Đặt tiêu đề tab trình duyệt khi vào trang
-onMounted(() => {
-  document.title = "Chỉnh sửa Khách hàng";
-});
+const route = useRoute();
+const router = useRouter();
+const isLoading = ref(false);
+
+// State cho ảnh đại diện
+const avatarFile = ref(null);
+const avatarPreview = ref(null);
 
 // Dữ liệu form
 const formData = ref({
@@ -20,6 +26,192 @@ const formData = ref({
   lastPurchaseDate: "",
   purchasedGoods: "",
   purchasedGoodsName: "",
+});
+
+// Xử lý chọn ảnh
+const handleAvatarChange = (event) => {
+  const file = event.target.files?.[0];
+  if (file) {
+    avatarFile.value = file;
+    
+    // Tạo preview ảnh
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      avatarPreview.value = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+// Load dữ liệu khách hàng từ API
+const loadCustomerData = async () => {
+  try {
+    isLoading.value = true;
+    const customerId = route.params.id;
+    
+    if (!customerId) {
+      toastr.error("ID khách hàng không hợp lệ");
+      router.back();
+      return;
+    }
+
+    const response = await customerAPI.getById(customerId);
+    console.log('Customer data:', response.data);
+
+    if (response.data && response.data.data) {
+      const customer = response.data.data;
+      formData.value = {
+        customerType: customer.customerType || "",
+        customerCode: customer.customerCode || "",
+        customerName: customer.customerName || "",
+        taxCode: customer.customerTaxCode || "",
+        address: customer.customerAddress || "",
+        phone: customer.customerPhoneNumber || "",
+        email: customer.customerEmail || "",
+        lastPurchaseDate: customer.lastPurchaseDate || "",
+        purchasedGoods: customer.purchasedItemCode || "",
+        purchasedGoodsName: customer.purchasedItemName || "",
+      };
+      document.title = `Chỉnh sửa - ${customer.customerName}`;
+    }
+  } catch (error) {
+    console.error('Lỗi khi tải dữ liệu khách hàng:', error);
+    toastr.error("Không thể tải dữ liệu khách hàng");
+    router.back();
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Validate form
+const validateForm = () => {
+  if (!formData.value.customerName.trim()) {
+    toastr.error("Vui lòng nhập tên khách hàng");
+    return false;
+  }
+  if (!formData.value.customerType.trim()) {
+    toastr.error("Vui lòng chọn loại khách hàng");
+    return false;
+  }
+  if (!formData.value.phone.trim()) {
+    toastr.error("Vui lòng nhập số điện thoại");
+    return false;
+  }
+  return true;
+};
+
+// Xử lý lưu khách hàng
+const handleSave = async () => {
+  if (!validateForm()) return;
+
+  try {
+    isLoading.value = true;
+    const customerId = route.params.id;
+    
+    // Nếu có file ảnh, dùng endpoint with-avatar
+    if (avatarFile.value) {
+      const formDataWithFile = new FormData();
+      formDataWithFile.append('file', avatarFile.value);
+      formDataWithFile.append('customerType', formData.value.customerType);
+      formDataWithFile.append('customerCode', formData.value.customerCode || '');
+      formDataWithFile.append('customerName', formData.value.customerName);
+      formDataWithFile.append('customerTaxCode', formData.value.taxCode);
+      formDataWithFile.append('customerAddress', formData.value.address);
+      formDataWithFile.append('customerPhoneNumber', formData.value.phone);
+      formDataWithFile.append('customerEmail', formData.value.email);
+      formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate || '');
+      formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
+      formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
+
+      const response = await customerAPI.updateWithAvatar(customerId, formDataWithFile);
+      console.log('Update response:', response.data);
+    } else {
+      // Nếu không có ảnh, dùng endpoint thường
+      const payload = {
+        customerType: formData.value.customerType,
+        customerCode: formData.value.customerCode || undefined,
+        customerName: formData.value.customerName,
+        customerTaxCode: formData.value.taxCode,
+        customerAddress: formData.value.address,
+        customerPhoneNumber: formData.value.phone,
+        customerEmail: formData.value.email,
+        lastPurchaseDate: formData.value.lastPurchaseDate || null,
+        purchasedItemCode: formData.value.purchasedGoods,
+        purchasedItemName: formData.value.purchasedGoodsName,
+      };
+
+      const response = await customerAPI.update(customerId, payload);
+      console.log('Update response:', response.data);
+    }
+    
+    toastr.success(`Đã cập nhật khách hàng "${formData.value.customerName}" thành công`);
+    router.push('/customer');
+  } catch (error) {
+    console.error('Lỗi khi cập nhật khách hàng:', error);
+    toastr.error('Không thể cập nhật khách hàng. Vui lòng kiểm tra lại thông tin.');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Xử lý lưu và thêm mới
+const handleSaveAndAdd = async () => {
+  if (!validateForm()) return;
+
+  try {
+    isLoading.value = true;
+    const customerId = route.params.id;
+    
+    // Nếu có file ảnh, dùng endpoint with-avatar
+    if (avatarFile.value) {
+      const formDataWithFile = new FormData();
+      formDataWithFile.append('file', avatarFile.value);
+      formDataWithFile.append('customerType', formData.value.customerType);
+      formDataWithFile.append('customerCode', formData.value.customerCode || '');
+      formDataWithFile.append('customerName', formData.value.customerName);
+      formDataWithFile.append('customerTaxCode', formData.value.taxCode);
+      formDataWithFile.append('customerAddress', formData.value.address);
+      formDataWithFile.append('customerPhoneNumber', formData.value.phone);
+      formDataWithFile.append('customerEmail', formData.value.email);
+      formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate || '');
+      formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
+      formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
+
+      const response = await customerAPI.updateWithAvatar(customerId, formDataWithFile);
+      console.log('Update response:', response.data);
+    } else {
+      // Nếu không có ảnh, dùng endpoint thường
+      const payload = {
+        customerType: formData.value.customerType,
+        customerCode: formData.value.customerCode || undefined,
+        customerName: formData.value.customerName,
+        customerTaxCode: formData.value.taxCode,
+        customerAddress: formData.value.address,
+        customerPhoneNumber: formData.value.phone,
+        customerEmail: formData.value.email,
+        lastPurchaseDate: formData.value.lastPurchaseDate || null,
+        purchasedItemCode: formData.value.purchasedGoods,
+        purchasedItemName: formData.value.purchasedGoodsName,
+      };
+
+      const response = await customerAPI.update(customerId, payload);
+      console.log('Update response:', response.data);
+    }
+    
+    toastr.success(`Đã cập nhật khách hàng "${formData.value.customerName}" thành công`);
+    router.push('/customer/add');
+  } catch (error) {
+    console.error('Lỗi khi cập nhật khách hàng:', error);
+    toastr.error('Không thể cập nhật khách hàng. Vui lòng kiểm tra lại thông tin.');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Đặt tiêu đề tab trình duyệt khi vào trang
+onMounted(() => {
+  document.title = "Chỉnh sửa Khách hàng";
+  loadCustomerData();
 });
 </script>
 <template>
@@ -38,9 +230,9 @@ const formData = ref({
       </div>
       <!-- Bố cục thanh công cụ (phần phải) -->
       <div class="toolbar-right flex-row align-center">
-        <MsButton type="secondary">Hủy bỏ</MsButton>
-        <MsButton type="outline-primary">Lưu và thêm</MsButton>
-        <MsButton type="primary">Lưu</MsButton>
+        <MsButton type="secondary" @click="router.back()">Hủy bỏ</MsButton>
+        <MsButton type="outline-primary" @click="handleSaveAndAdd" :disabled="isLoading">Lưu và thêm</MsButton>
+        <MsButton type="primary" @click="handleSave" :disabled="isLoading">Lưu</MsButton>
       </div>
     </div>
 
@@ -49,8 +241,16 @@ const formData = ref({
       <!-- Phần ảnh đại diện -->
       <div class="section-image">
         <div class="title-image">Ảnh</div>
-        <div class="avatar-wrapper">
-          <div class="icon-default-background icon-image-customer"></div>
+        <div class="avatar-wrapper" @click="$refs.avatarInput?.click()">
+          <img v-if="avatarPreview" :src="avatarPreview" alt="Avatar preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" />
+          <div v-else class="icon-default-background icon-image-customer"></div>
+          <input 
+            type="file" 
+            accept="image/*" 
+            @change="handleAvatarChange"
+            style="display: none;"
+            ref="avatarInput"
+          />
         </div>
       </div>
 
@@ -192,7 +392,7 @@ const formData = ref({
 .page-title {
   font-weight: 500;
   font-size: 20px;
-  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   padding: 0;
   color: #1f2229;
   margin-left: 20px;
@@ -207,13 +407,13 @@ const formData = ref({
   font-weight: 500;
   font-size: 16px;
   color: #1f2229;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
 }
 
 .edit-layout-link {
   margin: 0;
   font-size: 13px;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   box-shadow: none;
   font-weight: 400;
   border-radius: 0;
@@ -250,7 +450,7 @@ const formData = ref({
   display: block;
   margin-bottom: 16px;
   font-weight: 500;
-  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   color: #1f2229;
 }
 
@@ -264,6 +464,18 @@ const formData = ref({
   justify-content: center;
 }
 
+.avatar-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 15px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
 /* Phần thông tin chung */
 .general-info-section {
   background-color: #ffffff;
@@ -274,7 +486,7 @@ const formData = ref({
 .section-title {
   font-size: 18px;
   font-weight: 500;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   color: #1f2229;
   margin: 20px 0 16px 0;
 }
@@ -310,7 +522,7 @@ const formData = ref({
   text-overflow: ellipsis;
   font-weight: 500;
   font-size: 13px;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   display: inline-flex;
   align-items: center;
   width: 140px;

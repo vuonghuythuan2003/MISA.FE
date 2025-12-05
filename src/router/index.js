@@ -18,11 +18,11 @@ const routes = [
 		name: 'CustomerAdd',
 		component: AddCustomer
 	},
-    {
-        path: '/customer/edit',
+	{
+		path: '/customer/edit/:id',
 		name: 'CustomerEdit',
 		component: EditCustomer
-    }
+	}
 ]
 const router = createRouter({
 	history: createWebHistory(),

@@ -45,7 +45,7 @@ defineProps({
 table {
   width: 100%;
   border-collapse: collapse;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   font-size: 13px;
 }
 

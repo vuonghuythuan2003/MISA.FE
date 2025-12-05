@@ -56,6 +56,16 @@
   color: white;
   width: 57px;
   height: 32px;
+  transition: all 0.3s ease;
+}
+
+.ms-button--primary:hover {
+  background-color: #3b52d0;
+  box-shadow: 0 2px 8px rgba(66, 98, 240, 0.2);
+}
+
+.ms-button--primary:active {
+  background-color: #2d41a8;
 }
 
 .ms-button--secondary {
@@ -68,45 +78,92 @@
   border-radius: 4px;
   font-weight: 500 !important;  
   font-size: 13px;
-      font-feature-settings: normal;
-    font-variant: normal;
-    cursor: pointer;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
+  font-feature-settings: normal;
+  font-variant: normal;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.ms-button--secondary:hover {
+  background-color: #f5f5f5;
+  border-color: #b8bcc4;
+}
+
+.ms-button--secondary:active {
+  background-color: #e7ebfd;
+  border-color: #7c869c;
 }
 
 .ms-button--outline-primary {
   color: #4262F0;
   border: 1px solid #4262F0;
   font-feature-settings: normal;
-    font-variant: normal;
-    cursor: pointer;
-    text-align: center;
-    white-space: nowrap;
-    font-family: "Inter", Arial, Helvetica, sans-serif;
-    font-size: 13px;
-    background-color: #FFFFFF;
-    box-sizing: border-box;
-    width: 110px;
-    font-weight: 500;
-    height: 32px;
+  font-variant: normal;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  background-color: #FFFFFF;
+  box-sizing: border-box;
+  width: 110px;
+  font-weight: 500;
+  height: 32px;
+  transition: all 0.3s ease;
+}
+
+.ms-button--outline-primary:hover {
+  background-color: #e7ebfd;
+  border-color: #4262F0;
+}
+
+.ms-button--outline-primary:active {
+  background-color: #d0d9f7;
+  border-color: #2d41a8;
 }
 
 .ms-button--link {
   background: none;
   color: #1976d2;
   padding: 0;
+  transition: all 0.3s ease;
+}
+
+.ms-button--link:hover {
+  color: #3b52d0;
 }
 
 .ms-button--warning {
   background-color: #ff9800;
   color: white;
+  transition: all 0.3s ease;
+}
+
+.ms-button--warning:hover {
+  background-color: #e68900;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
+}
+
+.ms-button--warning:active {
+  background-color: #cc7700;
 }
 
 .ms-button--danger {
   background-color: #dc3545;
   color: white;
+  transition: all 0.3s ease;
+}
+
+.ms-button--danger:hover {
+  background-color: #c82333;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+}
+
+.ms-button--danger:active {
+  background-color: #a71d2a;
 }
 
 .ms-button--icon-only {
@@ -116,6 +173,7 @@
   padding: 0;
   background-color: transparent;
   border: none;
+  transition: all 0.3s ease;
 }
 
 .ms-button--icon-only .ms-button__main {
@@ -124,7 +182,12 @@
 }
 
 .ms-button--icon-only:hover {
-  background-color: rgba(0, 0, 0, 0.08);
+  background-color: #e7ebfd;
+  border-radius: 4px;
+}
+
+.ms-button--icon-only:active {
+  background-color: #d0d9f7;
 }
 
 .ms-button--icon-only-danger {
@@ -135,6 +198,7 @@
   background-color: transparent;
   border: none;
   color: #ff4d4f;
+  transition: all 0.3s ease;
 }
 
 .ms-button--icon-only-danger .ms-button__main {
@@ -143,7 +207,7 @@
 }
 
 .ms-button--icon-only-danger:hover {
-  background-color: #fff1f0;
+  background-color: transparent;
   color: #cf1322;
 }
 

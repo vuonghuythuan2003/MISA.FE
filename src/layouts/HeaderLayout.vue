@@ -111,7 +111,7 @@ function goToHome() {
   margin-top: 11px;
 }
 .brand-box .app-title {
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   font-weight: 700;
   font-size: 17px;
   color: #111827;
@@ -133,13 +133,24 @@ function goToHome() {
   gap: 8px;
   padding: 0px 8px;
   margin-top: 3px;
+  transition: all 0.3s ease;
 }
+
+.navbar .nav-item:hover {
+  color: #427bf4;
+}
+
+.navbar .nav-item:hover .nav-text {
+  color: #427bf4;
+}
+
 .navbar .nav-text {
   margin-top: 2px;
   color: #1f2229;
   font-size: 13px;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   white-space: nowrap;
+  transition: all 0.3s ease;
 }
 
 .navbar .nav-item.active {

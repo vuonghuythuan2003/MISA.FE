@@ -1,12 +1,25 @@
 <script setup>
 import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import toastr from "toastr";
 import MsButton from "../../components/ms-button/MsButton.vue";
 import MsInput from "../../components/ms-input/MsInput.vue";
+import MsSelected from "../../components/ms-selected/MsSelected.vue";
+import customerAPI from "@/apis/components/CustomerAPI.js";
 
-// Đặt tiêu đề tab trình duyệt khi vào trang
-onMounted(() => {
-  document.title = "Thêm Khách hàng";
-});
+const router = useRouter();
+const isLoading = ref(false);
+
+// Customer type options
+const customerTypeOptions = [
+  { label: 'NBH01', value: 'NBH01' },
+  { label: 'LKHA', value: 'LKHA' },
+  { label: 'VIP', value: 'VIP' },
+];
+
+// State cho ảnh đại diện
+const avatarFile = ref(null);
+const avatarPreview = ref(null);
 
 // Dữ liệu form
 const formData = ref({
@@ -14,12 +27,197 @@ const formData = ref({
   customerCode: "",
   customerName: "",
   taxCode: "",
-  address: "",
+  shippingAddress: "",
   phone: "",
   email: "",
   lastPurchaseDate: "",
   purchasedGoods: "",
   purchasedGoodsName: "",
+});
+
+// Xử lý chọn ảnh
+const handleAvatarChange = (event) => {
+  const file = event.target.files?.[0];
+  if (file) {
+    avatarFile.value = file;
+    
+    // Tạo preview ảnh
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      avatarPreview.value = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+// Validate form
+const validateForm = () => {
+  if (!formData.value.customerName.trim()) {
+    toastr.error("Vui lòng nhập tên khách hàng");
+    return false;
+  }
+  if (!formData.value.customerType.trim()) {
+    toastr.error("Vui lòng chọn loại khách hàng");
+    return false;
+  }
+  if (!formData.value.phone.trim()) {
+    toastr.error("Vui lòng nhập số điện thoại");
+    return false;
+  }
+  return true;
+};
+
+// Xử lý lưu khách hàng
+const handleSave = async () => {
+  if (!validateForm()) return;
+
+  try {
+    isLoading.value = true;
+    
+    // Nếu có file ảnh, dùng endpoint with-avatar
+    if (avatarFile.value) {
+      const formDataWithFile = new FormData();
+      formDataWithFile.append('file', avatarFile.value);
+      formDataWithFile.append('customerType', formData.value.customerType);
+      formDataWithFile.append('customerCode', formData.value.customerCode || '');
+      formDataWithFile.append('customerName', formData.value.customerName);
+      formDataWithFile.append('customerTaxCode', formData.value.taxCode);
+      formDataWithFile.append('customerShippingAddress', formData.value.shippingAddress);
+      formDataWithFile.append('customerPhoneNumber', formData.value.phone);
+      formDataWithFile.append('customerEmail', formData.value.email);
+      formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate || '');
+      formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
+      formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
+
+      const response = await customerAPI.createWithAvatar(formDataWithFile);
+      console.log('Create response:', response.data);
+    } else {
+      // Nếu không có ảnh, dùng endpoint thường
+      const payload = {
+        customerType: formData.value.customerType,
+        customerCode: formData.value.customerCode || undefined,
+        customerName: formData.value.customerName,
+        customerTaxCode: formData.value.taxCode,
+        customerShippingAddress: formData.value.shippingAddress,
+        customerPhoneNumber: formData.value.phone,
+        customerEmail: formData.value.email,
+        lastPurchaseDate: formData.value.lastPurchaseDate || null,
+        purchasedItemCode: formData.value.purchasedGoods,
+        purchasedItemName: formData.value.purchasedGoodsName,
+      };
+
+      const response = await customerAPI.create(payload);
+      console.log('Create response:', response.data);
+    }
+    
+    toastr.success(`Đã thêm khách hàng "${formData.value.customerName}" thành công`);
+    router.push({ path: '/customer', query: { sortBy: 'customerId', order: 'desc' } });
+  } catch (error) {
+    console.error('Lỗi khi thêm khách hàng:', error);
+    toastr.error('Không thể thêm khách hàng. Vui lòng kiểm tra lại thông tin.');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Xử lý lưu và thêm tiếp
+const handleSaveAndAdd = async () => {
+  if (!validateForm()) return;
+
+  try {
+    isLoading.value = true;
+    
+    // Nếu có file ảnh, dùng endpoint with-avatar
+    if (avatarFile.value) {
+      const formDataWithFile = new FormData();
+      formDataWithFile.append('file', avatarFile.value);
+      formDataWithFile.append('customerType', formData.value.customerType);
+      formDataWithFile.append('customerCode', formData.value.customerCode || '');
+      formDataWithFile.append('customerName', formData.value.customerName);
+      formDataWithFile.append('customerTaxCode', formData.value.taxCode);
+      formDataWithFile.append('customerShippingAddress', formData.value.shippingAddress);
+      formDataWithFile.append('customerPhoneNumber', formData.value.phone);
+      formDataWithFile.append('customerEmail', formData.value.email);
+      formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate || '');
+      formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
+      formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
+
+      const response = await customerAPI.createWithAvatar(formDataWithFile);
+      console.log('Create response:', response.data);
+    } else {
+      // Nếu không có ảnh, dùng endpoint thường
+      const payload = {
+        customerType: formData.value.customerType,
+        customerCode: formData.value.customerCode || undefined,
+        customerName: formData.value.customerName,
+        customerTaxCode: formData.value.taxCode,
+        customerShippingAddress: formData.value.shippingAddress,
+        customerPhoneNumber: formData.value.phone,
+        customerEmail: formData.value.email,
+        lastPurchaseDate: formData.value.lastPurchaseDate || null,
+        purchasedItemCode: formData.value.purchasedGoods,
+        purchasedItemName: formData.value.purchasedGoodsName,
+      };
+
+      const response = await customerAPI.create(payload);
+      console.log('Create response:', response.data);
+    }
+    
+    toastr.success(`Đã thêm khách hàng "${formData.value.customerName}" thành công`);
+    // Reset form cho việc thêm tiếp
+    formData.value = {
+      customerType: "",
+      customerCode: "",
+      customerName: "",
+      taxCode: "",
+      shippingAddress: "",
+      phone: "",
+      email: "",
+      lastPurchaseDate: "",
+      purchasedGoods: "",
+      purchasedGoodsName: "",
+    };
+    avatarFile.value = null;
+    avatarPreview.value = null;
+    generateCustomerCode();
+  } catch (error) {
+    console.error('Lỗi khi thêm khách hàng:', error);
+    toastr.error('Không thể thêm khách hàng. Vui lòng kiểm tra lại thông tin.');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Sinh mã khách hàng
+const generateCustomerCode = async () => {
+  try {
+    const response = await customerAPI.generateNewCode();
+    const codeData = response.data;
+    
+    // Log để debug
+    console.log('Code response:', codeData);
+    
+    // Nếu codeData là string, dùng trực tiếp
+    // Nếu là object, lấy property 'data' hoặc 'code' hoặc các tên khác
+    let code = '';
+    if (typeof codeData === 'string') {
+      code = codeData;
+    } else if (codeData && typeof codeData === 'object') {
+      // Thử các property phổ biến
+      code = codeData.data || codeData.code || codeData.customerCode || '';
+    }
+    
+    formData.value.customerCode = code || 'KH001'; // Fallback value
+  } catch (error) {
+    console.error('Lỗi khi generate mã khách hàng:', error);
+    formData.value.customerCode = 'KH001'; // Fallback
+  }
+};
+
+// Đặt tiêu đề tab trình duyệt khi vào trang
+onMounted(() => {
+  document.title = "Thêm Khách hàng";
+  generateCustomerCode();
 });
 </script>
 <template>
@@ -38,9 +236,9 @@ const formData = ref({
       </div>
       <!-- Bố cục thanh công cụ (phần phải) -->
       <div class="toolbar-right flex-row align-center">
-        <MsButton type="secondary">Hủy bỏ</MsButton>
-        <MsButton type="outline-primary">Lưu và thêm</MsButton>
-        <MsButton type="primary">Lưu</MsButton>
+        <MsButton type="secondary" @click="router.back()">Hủy bỏ</MsButton>
+        <MsButton type="outline-primary" @click="handleSaveAndAdd" :disabled="isLoading">Lưu và thêm</MsButton>
+        <MsButton type="primary" @click="handleSave" :disabled="isLoading">Lưu</MsButton>
       </div>
     </div>
 
@@ -49,8 +247,16 @@ const formData = ref({
       <!-- Phần ảnh đại diện -->
       <div class="section-image">
         <div class="title-image">Ảnh</div>
-        <div class="avatar-wrapper">
-          <div class="icon-default-background icon-image-customer"></div>
+        <div class="avatar-wrapper" @click="$refs.avatarInput?.click()">
+          <img v-if="avatarPreview" :src="avatarPreview" alt="Avatar preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" />
+          <div v-else class="icon-default-background icon-image-customer"></div>
+          <input 
+            type="file" 
+            accept="image/*" 
+            @change="handleAvatarChange"
+            style="display: none;"
+            ref="avatarInput"
+          />
         </div>
       </div>
 
@@ -64,10 +270,10 @@ const formData = ref({
             <div class="form-item flex-row align-center">
               <label class="form-label">Loại khách hàng <span class="required">*</span></label>
               <div class="input-wrapper">
-                <MsInput
+                <MsSelected
                   v-model="formData.customerType"
-                  placeholder="- Không chọn -"
-                  readonly
+                  :options="customerTypeOptions"
+                  placeholder="- Chọn loại khách hàng -"
                 />
               </div>
             </div>
@@ -93,27 +299,6 @@ const formData = ref({
             </div>
 
             <div class="form-item flex-row align-center">
-              <label class="form-label">Mã số thuế <span class="required">*</span></label>
-              <div class="input-wrapper">
-                <MsInput
-                  v-model="formData.taxCode"
-                />
-              </div>
-            </div>
-
-            <div class="form-item flex-row align-center">
-              <label class="form-label">Địa chỉ (Giao hàng) <span class="required">*</span></label>
-              <div class="input-wrapper">
-                <MsInput
-                  v-model="formData.address"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Cột phải -->
-          <div class="col-right">
-            <div class="form-item flex-row align-center">
               <label class="form-label">Điện thoại <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
@@ -129,6 +314,27 @@ const formData = ref({
                 <MsInput
                   v-model="formData.email"
                   type="email"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Cột phải -->
+          <div class="col-right">
+            <div class="form-item flex-row align-center">
+              <label class="form-label">Mã số thuế <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <MsInput
+                  v-model="formData.taxCode"
+                />
+              </div>
+            </div>
+
+            <div class="form-item flex-row align-center">
+              <label class="form-label">Địa chỉ giao hàng <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <MsInput
+                  v-model="formData.shippingAddress"
                 />
               </div>
             </div>
@@ -172,6 +378,8 @@ const formData = ref({
 .container-add-customer {
   background-color: #f5f5f5;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .toolbar {
@@ -181,6 +389,7 @@ const formData = ref({
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
 .toolbar-left {
@@ -192,10 +401,10 @@ const formData = ref({
 .page-title {
   font-weight: 500;
   font-size: 20px;
-  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   padding: 0;
   color: #1f2229;
-  margin-left: 20px;
+  margin-left: 16px;
   margin-right: 16px;
   margin-top: 5px;
 }
@@ -208,13 +417,13 @@ const formData = ref({
   font-weight: 500;
   font-size: 16px;
   color: #1f2229;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
 }
 
 .edit-layout-link {
   margin: 0;
   font-size: 13px;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   box-shadow: none;
   font-weight: 400;
   border-radius: 0;
@@ -236,7 +445,9 @@ const formData = ref({
 
 .page-content {
   padding: 32px;
-  background-color: #fff;
+  background-color: #ffffff;
+  flex: 1;
+  overflow-y: auto;
 }
 
 /* Phần ảnh */
@@ -251,10 +462,9 @@ const formData = ref({
   display: block;
   margin-bottom: 16px;
   font-weight: 500;
-  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   color: #1f2229;
 }
-
 
 .icon-image-customer {
   width: 48px;
@@ -264,6 +474,19 @@ const formData = ref({
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 15px;
+}
+
+.avatar-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 15px;
+  cursor: pointer;
+  overflow: hidden;
 }
 
 /* Phần thông tin chung */
@@ -274,36 +497,33 @@ const formData = ref({
 }
 
 .section-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   color: #1f2229;
-  margin: 20px 0 16px 0;
+  margin: 20px 0 20px 0;
 }
 
 .form-grid {
-  display: flex;
-  gap: 60px;
-  align-items: flex-start;
-  padding-right: 200px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  padding-right: 0;
 }
 
 .col-left,
 .col-right {
-  flex: 1 1 0;
-}
-
-.col-right .form-label {
-  width: 160px;
-  min-width: 160px;
-  flex: 0 0 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .form-item {
   display: flex;
   align-items: flex-start;
   gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  justify-content: flex-start;
 }
 
 .form-label {
@@ -312,14 +532,20 @@ const formData = ref({
   text-overflow: ellipsis;
   font-weight: 500;
   font-size: 13px;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   display: inline-flex;
   align-items: center;
-  width: 140px;
-  min-width: 140px;
-  flex: 0 0 140px;
+  width: 160px;
+  min-width: 160px;
+  flex: 0 0 160px;
   color: #1f2229;
-  padding-top: 6px;
+  padding-top: 8px;
+}
+
+.col-right .form-label {
+  width: 160px;
+  min-width: 160px;
+  flex: 0 0 160px;
 }
 
 .icon-info {
@@ -349,6 +575,8 @@ const formData = ref({
   padding: 6px 12px;
   font-size: 13px;
   border-radius: 4px;
+  background-color: #ffffff;
+  border: 1px solid #dfe4ea;
 }
 
 .input-wrapper :deep(.ms-input__message) {
@@ -377,7 +605,7 @@ const formData = ref({
   border: 1px solid #dfe4ea;
   border-radius: 4px;
   color: #1f2229;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
 }
 
 .combo-box .m-input {
@@ -394,7 +622,7 @@ const formData = ref({
   border: 1px solid #dfe4ea;
   border-radius: 4px;
   color: #1f2229;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   resize: vertical;
   min-height: 80px;
 }
@@ -434,7 +662,8 @@ const formData = ref({
 .align-center {
   align-items: center;
 }
-.icon-down{
+
+.icon-down {
   margin-left: 7px;
 }
 </style>

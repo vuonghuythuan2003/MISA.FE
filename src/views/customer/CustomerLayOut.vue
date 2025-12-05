@@ -1,36 +1,87 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import {
   LeftOutlined,
   VerticalRightOutlined,
   RightOutlined,
   VerticalLeftOutlined,
   DeleteOutlined,
+  SortAscendingOutlined,
 } from "@ant-design/icons-vue";
+import toastr from "toastr";
 import MsPagination from "@/components/ms-paginatuion/MsPagination.vue";
 import MsButton from "@/components/ms-button/MsButton.vue";
+import customerAPI from "@/apis/components/CustomerAPI.js";
+
+const router = useRouter();
+const route = useRoute();
+
+// Props từ MainContentLayout
+const props = defineProps({
+  searchKeyword: {
+    type: String,
+    default: ''
+  }
+});
+
+let searchTimeout;
+
+// Watch searchKeyword từ prop để gọi API khi thay đổi (với debounce)
+watch(() => props.searchKeyword, (newValue) => {
+  // Update searchKeyword local state
+  searchKeyword.value = newValue;
+  
+  // Clear timeout trước đó
+  clearTimeout(searchTimeout);
+  
+  // Đặt timeout để gọi API sau 300ms không gõ
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1;
+    fetchCustomers();
+  }, 300);
+});
 
 // Dữ liệu phân trang
 const currentPage = ref(1);
-const totalPages = ref(22);
+const totalPages = ref(0);
 const pageSize = ref(100);
-const totalRecords = ref(4690);
+const totalRecords = ref(0);
 const totalDebt = ref(0);
+const isLoading = ref(false);
+const errorMessage = ref('');
 
 // Dòng đang được di chuột vào
 const hoveredRowId = ref(null);
 
-// Xử lý thay đổi trang
-const handlePageChange = (page) => {
-  currentPage.value = page;
-  console.log("Đã chuyển sang trang:", page);
-};
+// Header đang được di chuột vào
+const hoveredHeaderKey = ref(null);
 
-// Xử lý thay đổi số bản ghi trên trang
-const handlePageSizeChange = (size) => {
-  pageSize.value = size;
-  console.log("Đã thay đổi số bản ghi trên trang:", size);
-};
+// Sắp xếp
+const sortColumn = ref('customerId');
+const sortDirection = ref('desc');
+
+// Tìm kiếm & Lọc
+const searchKeyword = ref('');
+const filterCustomerName = ref('');
+const filterCustomerEmail = ref('');
+const filterCustomerPhoneNumber = ref('');
+
+// Danh sách khách hàng từ API
+const customers = ref([]);
+
+const headers = [
+  { key: "customerType", label: "Loại khách hàng", width: "165px" },
+  { key: "customerCode", label: "Mã khách hàng ", width: "250px" },
+  { key: "customerName", label: "Tên khách hàng", width: "320px" },
+  { key: "customerTaxCode", label: "Mã số thuế", width: "150px" },
+  { key: "customerShippingAddress", label: "Địa chỉ giao hàng", width: "350px" },
+  { key: "customerPhoneNumber", label: "Điện thoại", width: "200px" },
+  { key: "customerEmail", label: "Email", width: "210px" },
+  { key: "lastPurchaseDate", label: "Ngày mua hàng gần nhất", width: "217px" },
+  { key: "purchasedItemCode", label: "Hàng hóa đã mua", width: "207px" },
+  { key: "purchasedItemName", label: "Tên hàng hóa đã mua", width: "197px" },
+];
 
 // Biến lưu trữ các ID khách hàng được chọn
 const selectedIds = ref(new Set());
@@ -56,194 +107,184 @@ const toggleSelectAll = () => {
   if (isAllSelected.value) {
     selectedIds.value = new Set();
   } else {
-    selectedIds.value = new Set(customers.value.map(c => c.id));
+    selectedIds.value = new Set(customers.value.map(c => c.customerId));
   }
+};
+
+/**
+ * Gọi API lấy danh sách khách hàng phân trang
+ */
+const fetchCustomers = async () => {
+  try {
+    isLoading.value = true;
+    const params = {
+      pageNumber: currentPage.value,
+      pageSize: pageSize.value
+    };
+    
+    // Thêm tham số sắp xếp nếu có
+    if (sortColumn.value) {
+      params.sortColumn = sortColumn.value;
+      params.sortDirection = sortDirection.value;
+    }
+    
+    // Thêm tham số tìm kiếm & lọc
+    // keyword sẽ tìm kiếm trên tất cả string fields: tên khách hàng, email, số điện thoại, mã
+    if (searchKeyword.value.trim()) {
+      params.keyword = searchKeyword.value.trim();
+    }
+    // Nếu có filter riêng từ các input khác, có thể thêm vào đây
+    // if (filterCustomerName.value.trim()) {
+    //   params.customerName = filterCustomerName.value.trim();
+    // }
+    if (filterCustomerEmail.value.trim()) {
+      params.customerEmail = filterCustomerEmail.value.trim();
+    }
+    if (filterCustomerPhoneNumber.value.trim()) {
+      params.customerPhoneNumber = filterCustomerPhoneNumber.value.trim();
+    }
+    
+    const response = await customerAPI.getPaging(params);
+
+    console.log('API Response:', response);
+    console.log('Response Data:', response.data);
+
+    // Response format: { data: [...], meta: { page, pageSize, total, ... }, error: null }
+    if (response.data && response.data.data) {
+      // Map dữ liệu từ API sang format của component
+      customers.value = response.data.data.map(customer => ({
+        id: customer.customerId,
+        customerId: customer.customerId,
+        type: customer.customerType || '-',
+        code: customer.customerCode,
+        name: customer.customerName,
+        email: customer.customerEmail || '-',
+        phone: customer.customerPhoneNumber || '-',
+        taxCode: customer.customerTaxCode || '-',
+        address: customer.customerShippingAddress || '-',
+        lastDate: customer.lastPurchaseDate || '-',
+        goodsCode: customer.purchasedItemCode || '-',
+        goodsName: customer.purchasedItemName || '-'
+      }));
+
+      // Lấy thông tin phân trang từ meta
+      if (response.data.meta) {
+        currentPage.value = response.data.meta.page || 1;
+        pageSize.value = response.data.meta.pageSize || 10;
+        totalRecords.value = response.data.meta.total || 0;
+        totalPages.value = response.data.meta.totalPages || 0;
+      }
+      
+      console.log('Customers:', customers.value);
+      console.log('Total Records:', totalRecords.value);
+    }
+  } catch (error) {
+    console.error('Lỗi khi gọi API lấy danh sách khách hàng:', error);
+    errorMessage.value = 'Lỗi khi tải danh sách khách hàng';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Xử lý tìm kiếm & lọc
+const handleSearch = () => {
+  currentPage.value = 1; // Reset về trang 1
+  fetchCustomers();
+};
+
+// Reset tìm kiếm & lọc
+const handleClearSearch = () => {
+  searchKeyword.value = '';
+  filterCustomerName.value = '';
+  filterCustomerEmail.value = '';
+  filterCustomerPhoneNumber.value = '';
+  currentPage.value = 1;
+  fetchCustomers();
+};
+
+// Xử lý sắp xếp
+const handleSort = (columnKey) => {
+  if (sortColumn.value === columnKey) {
+    // Nếu click vào cột đang sắp xếp, đảo chiều sắp xếp
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    // Nếu click vào cột khác, bắt đầu sắp xếp theo cột mới với chiều tăng
+    sortColumn.value = columnKey;
+    sortDirection.value = 'asc';
+  }
+  currentPage.value = 1; // Reset về trang 1
+  fetchCustomers();
+};
+
+// Xử lý thay đổi trang
+const handlePageChange = (page) => {
+  currentPage.value = page;
+  fetchCustomers();
+};
+
+// Xử lý thay đổi số bản ghi trên trang
+const handlePageSizeChange = (size) => {
+  pageSize.value = size;
+  currentPage.value = 1;
+  fetchCustomers();
 };
 
 // Xử lý xóa khách hàng
-const handleDelete = (customer) => {
-  console.log('Đang xóa khách hàng:', customer);
-  // Gọi API xóa khách hàng tại đây
+const handleDelete = async (customer) => {
   if (confirm(`Bạn có chắc muốn xóa khách hàng "${customer.name}"?`)) {
-    customers.value = customers.value.filter(c => c.id !== customer.id);
+    try {
+      isLoading.value = true;
+      await customerAPI.delete(customer.customerId);
+      toastr.success(`Đã xóa khách hàng "${customer.name}" thành công`);
+      fetchCustomers();
+    } catch (error) {
+      console.error('Lỗi khi xóa khách hàng:', error);
+      toastr.error('Lỗi khi xóa khách hàng');
+      errorMessage.value = 'Lỗi khi xóa khách hàng';
+    } finally {
+      isLoading.value = false;
+    }
   }
 };
 
-const headers = [
-  { key: "type", label: "Loại khách hàng", width: "165px" },
-  { key: "code", label: "Mã khách hàng ", width: "250px" },
-  { key: "name", label: "Tên khách hàng", width: "320px" },
-  { key: "taxCode", label: "Mã số thuế", width: "150px" },
-  { key: "address", label: "Địa chỉ (Giao hàng)", width: "197px" },
-  { key: "phone", label: "Điện thoại", width: "150px" },
-  { key: "email", label: "Email", width: "210px" },
-  { key: "lastDate", label: "Ngày mua hàng gần nhất", width: "217px" },
-  { key: "goodsCode", label: "Hàng hóa đã mua", width: "207px" },
-  { key: "goodsName", label: "Tên hàng hóa đã mua", width: "197px" },
-];
+// Xử lý double click để sửa khách hàng
+const handleEditCustomer = async (customer) => {
+  try {
+    isLoading.value = true;
+    // Gọi API lấy chi tiết khách hàng
+    const response = await customerAPI.getById(customer.customerId);
+    console.log('Customer details:', response.data);
+    // Điều hướng tới trang sửa với ID khách hàng
+    router.push(`/customer/edit/${customer.customerId}`);
+  } catch (error) {
+    console.error('Lỗi khi lấy chi tiết khách hàng:', error);
+    toastr.error('Không thể tải chi tiết khách hàng');
+  } finally {
+    isLoading.value = false;
+  }
+};
 
-const customers = ref([
-  {
-    id: 1,
-    type: "NBH01",
-    code: "KH001-testvnquan3",
-    name: "Công ty TNHH Hoa Mai",
-    taxCode: "-",
-    address: "-",
-    phone: "-",
-    lastDate: "-",
-    goodsCode: "-",
-    goodsName: "-",
-  },
-  {
-    id: 2,
-    type: "-",
-    code: "KH0000100100216265210",
-    name: "Vương Long",
-    taxCode: "-",
-    address: "-",
-    phone: "055555553...",
-    lastDate: "-",
-    goodsCode: "-",
-    goodsName: "-",
-  },
-  {
-    id: 3,
-    type: "-",
-    code: "KH0000100100216265209",
-    name: "Silkweb",
-    taxCode: "-",
-    address: "N/A",
-    phone: "-",
-    lastDate: "-",
-    goodsCode: "-",
-    goodsName: "-",
-  },
-  {
-    id: 4,
-    type: "-",
-    code: "KH0000100100216265208",
-    name: "CÔNG TY CỔ PHẦN SẢN XUẤT KINH DOANH...",
-    taxCode: "0100101234",
-    address: "Số 5 ngõ 31 phố Hoàng...",
-    phone: "0904165344",
-    lastDate: "-",
-    goodsCode: "-",
-    goodsName: "-",
-  },
-  {
-    id: 5,
-    type: "NBH01",
-    code: "KH001-testnhanh-111",
-    name: "Công ty TNHH Hoa Mai",
-    taxCode: "-",
-    address: "-",
-    phone: "-",
-    lastDate: "-",
-    goodsCode: "-",
-    goodsName: "-",
-  },
-  {
-    id: 6,
-    type: "-",
-    code: "KH0000100100216265211",
-    name: "Ngọc Anh",
-    taxCode: "-",
-    address: "-",
-    phone: "-",
-    lastDate: "22/10/2025",
-    goodsCode: "-",
-    goodsName: "-",
-  },
-  {
-    id: 7,
-    type: "LKHA",
-    code: "KH10010021626224",
-    name: "HỘ KINH DOANH TOTO BEAUTY",
-    taxCode: "0109763539-001",
-    address: "Số 152, đường 2, Xã Phủ...",
-    phone: "0974526333",
-    lastDate: "22/10/2025",
-    goodsCode: "PPP00, 40990...",
-    goodsName: "123456789, 24 Gran...",
-  },
-  {
-    id: 8,
-    type: "LKHA",
-    code: "KH10010021626224",
-    name: "HỘ KINH DOANH TOTO BEAUTY",
-    taxCode: "0109763539-001",
-    address: "Số 152, đường 2, Xã Phủ...",
-    phone: "0974526333",
-    lastDate: "22/10/2025",
-    goodsCode: "PPP00, 40990...",
-    goodsName: "123456789, 24 Gran...",
-  },
-  {
-    id: 9,
-    type: "LKHA",
-    code: "KH10010021626224",
-    name: "HỘ KINH DOANH TOTO BEAUTY",
-    taxCode: "0109763539-001",
-    address: "Số 152, đường 2, Xã Phủ...",
-    phone: "0974526333",
-    lastDate: "22/10/2025",
-    goodsCode: "PPP00, 40990...",
-    goodsName: "123456789, 24 Gran...",
-  },
-  {
-    id: 10,
-    type: "LKHA",
-    code: "KH10010021626224",
-    name: "HỘ KINH DOANH TOTO BEAUTY",
-    taxCode: "0109763539-001",
-    address: "Số 152, đường 2, Xã Phủ...",
-    phone: "0974526333",
-    email: "vuonghuythuan1@gmail.com",
-    lastDate: "22/10/2025",
-    goodsCode: "PPP00, 40990...",
-    goodsName: "123456789, 24 Gran...",
-  },
-  {
-    id: 11,
-    type: "LKHA",
-    code: "KH10010021626224",
-    name: "HỘ KINH DOANH TOTO BEAUTY",
-    taxCode: "0109763539-001",
-    address: "Số 152, đường 2, Xã Phủ...",
-    phone: "0974526333",
-    email: "vuonghuythuan1@gmail.com",
-    lastDate: "22/10/2025",
-    goodsCode: "PPP00, 40990...",
-    goodsName: "123456789, 24 Gran...",
-  },
-  {
-    id: 12,
-    type: "LKHA",
-    code: "KH10010021626224",
-    name: "HỘ KINH DOANH TOTO BEAUTY",
-    taxCode: "0109763539-001",
-    address: "Số 152, đường 2, Xã Phủ...",
-    phone: "0974526333",
-    email: "vuonghuythuan1@gmail.com",
-    lastDate: "22/10/2025",
-    goodsCode: "PPP00, 40990...",
-    goodsName: "123456789, 24 Gran...",
-  },
-  {
-    id: 13,
-    type: "LKHA",
-    code: "KH10010021626224",
-    name: "HỘ KINH DOANH TOTO BEAUTY",
-    taxCode: "0109763539-001",
-    address: "Số 152, đường 2, Xã Phủ...",
-    phone: "0974526333",
-    email: "vuonghuythuan1@gmail.com",
-    lastDate: "22/10/2025",
-    goodsCode: "PPP00, 40990...",
-    goodsName: "123456789, 24 Gran...",
-  },
-]);
+// Tải dữ liệu khi component mount
+onMounted(() => {
+  // Kiểm tra query parameters từ redirect sau khi thêm khách hàng
+  if (route.query.sortBy) {
+    sortColumn.value = route.query.sortBy;
+    sortDirection.value = route.query.order || 'desc';
+  }
+  fetchCustomers();
+});
+
+// Watch route để refresh khi quay lại từ trang add/edit
+watch(() => route.fullPath, (newPath, oldPath) => {
+  // Nếu đang ở trang customer và có thay đổi route (từ add/edit quay về)
+  if (route.path === '/customer' && oldPath && oldPath !== newPath) {
+    // Reset về trang 1 và sắp xếp theo ID mới nhất
+    currentPage.value = 1;
+    sortColumn.value = 'customerId';
+    sortDirection.value = 'desc';
+    fetchCustomers();
+  }
+});
 </script>
 
 <template>
@@ -267,8 +308,19 @@ const customers = ref([
               :key="index"
               :style="{ width: header.width || 'auto' }"
               class="th-data"
+              :class="{ active: sortColumn === header.key }"
+              @mouseenter="hoveredHeaderKey = header.key"
+              @mouseleave="hoveredHeaderKey = null"
+              @click="handleSort(header.key)"
             >
-              {{ header.label }}
+              <div class="header-content">
+                <span>{{ header.label }}</span>
+                <SortAscendingOutlined 
+                  v-if="hoveredHeaderKey === header.key" 
+                  class="sort-icon"
+                  :style="{ transform: sortColumn === header.key && sortDirection === 'desc' ? 'rotate(180deg)' : 'rotate(0deg)', color: sortColumn === header.key ? '#1890ff' : '#7c869c' }"
+                />
+              </div>
             </th>
             <!-- Cột trống cuối cùng để fill layout -->
             <th class="th-actions"></th>
@@ -281,6 +333,8 @@ const customers = ref([
             :key="customer.id"
             @mouseenter="hoveredRowId = customer.id"
             @mouseleave="hoveredRowId = null"
+            @dblclick="handleEditCustomer(customer)"
+            style="cursor: pointer;"
           >
             <td class="td-checkbox">
               <span 
@@ -345,6 +399,7 @@ const customers = ref([
       :page-size="pageSize"
       :current-page="currentPage"
       :total-pages="totalPages"
+      :page-size-options="[15, 30, 50, 100]"
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"
     >
@@ -381,7 +436,7 @@ const customers = ref([
 table {
   width: 100%;
   table-layout: fixed;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   font-size: 13px;
   border-collapse: collapse;
 }
@@ -440,6 +495,17 @@ th {
   color: #1f2229;
   white-space: nowrap;
 }
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sort-icon {
+  font-size: 12px;
+  color: #7c869c;
+}
 .th-data,
 td {
   overflow: hidden;
@@ -449,12 +515,16 @@ td {
 }
 tbody tr:hover {
   background-color: #e7ebfd;
+}
+
+tbody tr:hover .action-buttons {
+  display: flex !important;
 } 
 .text-left {
   text-align: left;
   color: #0f2fbd;
   font-size: 13px;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
 }
 .header-dark {
   color: #1f2229;
@@ -468,10 +538,14 @@ tbody tr:hover {
   text-align: center;
   position: sticky;
   left: 0;
-  background-color: inherit;
+  background-color: #fff;
   z-index: 2;
   border-right: none;
   padding-right: 30px;;
+}
+
+tbody tr:hover .td-checkbox {
+  background-color: #e7ebfd;
 }
 /* Style cho các icon trong phân trang */
 :deep(.nav-icon) {
@@ -494,7 +568,7 @@ tbody tr:hover {
   min-width: 80px;
   position: sticky;
   right: 0;
-  background-color: inherit;
+  background-color: #fff;
   z-index: 2;
   text-align: center;
 }
@@ -503,11 +577,32 @@ tbody tr:hover {
   background-color: #fff;
 }
 
+tbody tr:hover .td-actions {
+  background-color: #e7ebfd;
+}
+
 
 .action-buttons {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+}
+
+.sort-icon {
+  font-size: 14px;
+  color: #7c869c;
+  margin-left: 4px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.th-data {
+  cursor: pointer;
+  user-select: none;
+}
+
+.th-data.active .sort-icon {
+  color: #1890ff;
 }
 </style>

@@ -18,12 +18,27 @@
     <!-- Phần bên phải: Chọn số bản ghi và điều hướng trang -->
     <div class="pagination-right flex-row align-center justify-content-space-between">
       <!-- Dropdown chọn số bản ghi trên trang -->
-      <div 
-        class="page-size-selector flex-row align-center justify-content-space-between" 
-        @click="togglePageSizeDropdown"
-      >
-        <span class="text-size">{{ pageSize }} Bản ghi trên trang</span>
-        <div class="icon-default icon-down"></div>
+      <div class="page-size-selector-wrapper">
+        <div 
+          class="page-size-selector flex-row align-center justify-content-space-between" 
+          @click="showPageSizeDropdown = !showPageSizeDropdown"
+        >
+          <span class="text-size">{{ pageSize }} Bản ghi trên trang</span>
+          <div class="icon-default icon-down"></div>
+        </div>
+        
+        <!-- Dropdown menu -->
+        <div v-if="showPageSizeDropdown" class="page-size-dropdown">
+          <div 
+            v-for="size in pageSizeOptions" 
+            :key="size"
+            class="dropdown-item"
+            :class="{ active: pageSize === size }"
+            @click="handlePageSizeChange(size)"
+          >
+            {{ size }} bản ghi
+          </div>
+        </div>
       </div>
 
       <!-- Điều hướng trang -->
@@ -77,6 +92,7 @@
 </template>
 
 <script setup>
+import { ref } from 'vue';
 import { formatNumber } from '@/utils/formatter';
 
 //#region Thuộc tính
@@ -126,7 +142,22 @@ const emit = defineEmits([
 ]);
 //#endregion
 
+//#region State
+const showPageSizeDropdown = ref(false);
+
+//#endregion
+
 //#region Phương thức
+/**
+ * Xử lý thay đổi số bản ghi trên trang
+ */
+const handlePageSizeChange = (size) => {
+  if (size !== props.pageSize) {
+    showPageSizeDropdown.value = false;
+    emit('page-size-change', size);
+  }
+};
+
 /**
  * Toggle dropdown chọn số bản ghi
  */
@@ -216,7 +247,7 @@ defineExpose({
   box-sizing: border-box;
   font-size: 13px;
   width: 375px;
-  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
 }
 
 .count-info-text {
@@ -226,7 +257,7 @@ defineExpose({
 
 .total-record {
   padding-left: 16px;
-  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   font-size: 13px;
 }
 
@@ -244,6 +275,7 @@ defineExpose({
 
 .total-debt {
   margin-left: 20px;
+  font-size : 13px;
 }
 
 .page-size-selector {
@@ -258,6 +290,44 @@ defineExpose({
 
 .page-size-selector:hover {
   border-color: #4262f0;
+}
+
+.page-size-selector-wrapper {
+  position: relative;
+}
+
+.page-size-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 0;
+  background: white;
+  border: 1px solid #d3d7de;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.dropdown-item {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #1f2229;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #f0f2f5;
+}
+
+.dropdown-item.active {
+  background-color: #e7ebfd;
+  color: #4262f0;
+  font-weight: 500;
 }
 
 .page-navigation {

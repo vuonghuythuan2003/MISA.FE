@@ -90,7 +90,7 @@ const handleChange = (date, dateString) => {
   font-size: 14px;
   font-weight: 500;
   color: #1e2633;
-  font-family: Inter, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
 }
 
 .required {
@@ -122,7 +122,7 @@ const handleChange = (date, dateString) => {
 .date-picker-custom :deep(.ant-picker-input > input) {
   font-size: 14px;
   color: #1e2633;
-  font-family: Inter, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
 }
 
 .date-picker-custom :deep(.ant-picker-input > input::placeholder) {

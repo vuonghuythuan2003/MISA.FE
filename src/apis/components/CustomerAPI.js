@@ -45,6 +45,33 @@ class CustomerAPI extends BaseAPI {
             responseType: 'blob' // Để nhận file
         });
     }
+
+    /**
+     * Tạo mới khách hàng với upload ảnh đại diện
+     * @param {FormData} formData - Form data chứa file ảnh và thông tin khách hàng
+     * @returns {Promise} Response từ API
+     */
+    createWithAvatar(formData) {
+        return api.post(`/${this.controller}/with-avatar`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+    }
+
+    /**
+     * Cập nhật khách hàng với upload ảnh đại diện mới
+     * @param {string|number} id - ID khách hàng
+     * @param {FormData} formData - Form data chứa file ảnh và thông tin khách hàng
+     * @returns {Promise} Response từ API
+     */
+    updateWithAvatar(id, formData) {
+        return api.put(`/${this.controller}/${id}/with-avatar`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+    }
 }
 
 export default new CustomerAPI();

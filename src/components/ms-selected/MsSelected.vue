@@ -14,7 +14,7 @@
       @change="handleChange"
     >
       <template #suffixIcon>
-        <div class="icon-default icon-down"></div>
+        <div class="icon-default-background icon-type-customer"></div>
       </template>
     </a-select>
     <button v-if="hasButton" class="btn-more" @click="handleButtonClick">

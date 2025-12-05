@@ -122,6 +122,12 @@
     position: absolute;
     right: 10px;
 }
+.icon-type-customer {
+    background-position: -288px -708px;
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+}
 .icon-building{
     mask-position: -16px -1425px;
     mask-repeat: no-repeat;

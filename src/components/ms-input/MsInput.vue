@@ -275,7 +275,7 @@ defineExpose({
   width: 100%;
   padding: 8px 12px;
   font-size: 14px;
-  font-family: Inter, Helvetica, Arial, sans-serif;
+  font-family: Inter, sans-serif;
   color: #1e2633;
   background-color: #ffffff;
   border: 1px solid #e0e0e0;

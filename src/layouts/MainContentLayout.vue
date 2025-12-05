@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import MsButton from "../components/ms-button/MsButton.vue";
 import MsUpload from "../components/ms-upload/MsUpload.vue";
 import CustomerLayOut from "../views/customer/CustomerLayOut.vue";
@@ -9,6 +9,22 @@ const router = useRouter()
 
 // Trạng thái hiển thị popup upload
 const showUploadPopup = ref(false);
+
+// Trạng thái tìm kiếm & lọc
+const searchKeyword = ref('');
+let searchTimeout;
+
+// Watch searchKeyword để gọi API với debounce
+watch(searchKeyword, (newValue) => {
+  // Clear timeout trước đó
+  clearTimeout(searchTimeout);
+  
+  // Đặt timeout để gọi API sau 300ms không gõ
+  searchTimeout = setTimeout(() => {
+    // API sẽ tự động gọi thông qua watch ở CustomerLayOut
+    // vì searchKeyword là prop được truyền sang
+  }, 300);
+});
 
 function goToAdd() {
   router.push('/customer/add')
@@ -43,6 +59,7 @@ function openExcelImport() {
       <div class="smart-search-input flex-row align-center">
         <div class="icon-default icon-search"></div>
         <input
+          v-model="searchKeyword"
           type="text"
           placeholder="Tìm kiếm thông minh"
           class="search-field"
@@ -83,7 +100,7 @@ function openExcelImport() {
     </div>
   </div>
   <!-- Giao diện danh sách khách hàng hiển thị bên dưới thanh công cụ -->
-  <CustomerLayOut />
+  <CustomerLayOut :searchKeyword="searchKeyword" />
   
   <!-- Popup nhập từ Excel -->
   <MsUpload :open="showUploadPopup" @update:open="val => showUploadPopup = val" />
@@ -114,7 +131,7 @@ function openExcelImport() {
   margin-bottom: initial;
   cursor: pointer;
   font-weight: 600;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   line-height: 1.428571429;
   color: #1f2229;
 }
@@ -122,7 +139,7 @@ function openExcelImport() {
   padding: 0;
   margin: 0;
   font-size: 13px;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   color: #4262f0 !important;
 }
 .action-group {
@@ -194,7 +211,7 @@ function openExcelImport() {
   margin-top: 26px;
   font-size: 13px;
   width: 85.1px !important;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   padding: 5px 16px 5px 8px !important;
 }
 .btn-excel-import {
@@ -202,7 +219,7 @@ function openExcelImport() {
   margin-left: 8px;
   margin-top: 26px;
   font-size: 13px;
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: Inter, sans-serif;
   background-color: #ffffff !important;
   border: 1px solid #4262f0 !important;
   font-feature-settings: normal;
@@ -240,5 +257,76 @@ function openExcelImport() {
   border-radius: 4px;
   white-space: nowrap;
   padding: 7px !important;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-view-mode:hover {
+  background-color: #f5f5f5;
+  border-color: #b8bcc4;
+}
+
+.btn-view-mode:active {
+  background-color: #e7ebfd;
+  border-color: #7c869c;
+}
+
+/* Hover effects cho các nút khác */
+.toolbar-left .customer-dropdown {
+  transition: all 0.3s ease;
+}
+
+.toolbar-left .customer-dropdown:hover {
+  background-color: #f5f5f5;
+  border-color: #b8bcc4;
+}
+
+.toolbar-left .customer-dropdown:active {
+  background-color: #e7ebfd;
+  border-color: #7c869c;
+}
+
+.action-group {
+  transition: all 0.3s ease;
+}
+
+.action-group:hover {
+  opacity: 0.8;
+}
+
+.action-group:active {
+  opacity: 0.6;
+}
+
+.btn-square-icon {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-square-icon:hover {
+  box-shadow: 0 2px 8px rgba(66, 98, 240, 0.2);
+  opacity: 0.9;
+}
+
+.btn-square-icon:active {
+  opacity: 0.8;
+}
+
+.btn-more {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-more:hover {
+  background-color: #f5f5f5;
+  border-color: #b8bcc4;
+}
+
+.btn-more:active {
+  background-color: #e7ebfd;
+  border-color: #7c869c;
 }
 </style>
