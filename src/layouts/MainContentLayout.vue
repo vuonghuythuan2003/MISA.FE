@@ -14,6 +14,9 @@ const showUploadPopup = ref(false);
 // Trigger để yêu cầu reload danh sách sau khi import
 const refreshKey = ref(0);
 
+// Trạng thái chọn bản ghi để hiển thị các nút hành động
+const hasSelection = ref(false);
+
 // Trạng thái tìm kiếm & lọc
 const searchKeyword = ref("");
 let searchTimeout;
@@ -43,6 +46,11 @@ function openExcelImport() {
 function handleImported() {
   refreshKey.value += 1;
 }
+
+// Nhận danh sách ID được chọn từ CustomerLayOut
+function handleSelectionChange(selectedIds) {
+  hasSelection.value = Array.isArray(selectedIds) && selectedIds.length > 0;
+}
 </script>
 
 <template>
@@ -65,6 +73,7 @@ function handleImported() {
         <MsButton
           class="btn-delete-multiple align-center justify-content-center" 
           type="primary"
+          v-show="hasSelection"
           @click="goToDeleteMultiple"
           >Xóa nhiều</MsButton
         >
@@ -72,6 +81,7 @@ function handleImported() {
         <MsButton
           class="btn-excel-export align-center justify-content-center"
           type="link"
+          v-show="hasSelection"
           @click="openExcelImport"
         >
           <template #icon-left>
@@ -127,7 +137,11 @@ function handleImported() {
       </div>
     </div>
     <!-- Giao diện danh sách khách hàng hiển thị bên dưới thanh công cụ -->
-    <CustomerLayOut :searchKeyword="searchKeyword" :refresh-key="refreshKey" />
+    <CustomerLayOut
+      :searchKeyword="searchKeyword"
+      :refresh-key="refreshKey"
+      @selection-change="handleSelectionChange"
+    />
 
     <!-- Popup nhập từ Excel -->
     <MsUpload

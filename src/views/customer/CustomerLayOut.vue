@@ -37,6 +37,9 @@ const props = defineProps({
   },
 });
 
+// Emit selection changes to parent (MainContentLayout)
+const emit = defineEmits(['selection-change']);
+
 let searchTimeout;
 
 // Watch searchKeyword từ prop để gọi API khi thay đổi (với debounce)
@@ -103,6 +106,10 @@ const headers = [
 // Biến lưu trữ các ID khách hàng được chọn
 const selectedIds = ref(new Set());
 
+const emitSelection = () => {
+  emit('selection-change', Array.from(selectedIds.value));
+};
+
 // Kiểm tra tất cả đã được chọn chưa
 const isAllSelected = computed(() => {
   return customers.value.length > 0 && selectedIds.value.size === customers.value.length;
@@ -117,6 +124,7 @@ const toggleSelect = (id) => {
   }
   // Kích hoạt cập nhật giao diện
   selectedIds.value = new Set(selectedIds.value);
+  emitSelection();
 };
 
 // Bật/tắt chọn tất cả khách hàng
@@ -126,6 +134,7 @@ const toggleSelectAll = () => {
   } else {
     selectedIds.value = new Set(customers.value.map(c => c.customerId));
   }
+  emitSelection();
 };
 
 /**
@@ -200,6 +209,9 @@ const fetchCustomers = async () => {
     errorMessage.value = 'Lỗi khi tải danh sách khách hàng';
   } finally {
     isLoading.value = false;
+    // Reset selection after data refresh
+    selectedIds.value = new Set();
+    emitSelection();
   }
 };
 
