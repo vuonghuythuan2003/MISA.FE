@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AddCustomer from '../views/customer/AddCustomer.vue'
 import EditCustomer from '../views/customer/EditCustomer.vue'
 import MainContentLayout from '../layouts/MainContentLayout.vue'
+import OpportunityLayout from '../views/opportunity/OpportunityLayout.vue'
 
 const routes = [
 	{
@@ -12,6 +13,11 @@ const routes = [
 		path: '/customer',
 		name: 'Customer',
 		component: MainContentLayout
+	},
+	{
+		path: '/opportunity',
+		name: 'Opportunity',
+		component: OpportunityLayout
 	},
 	{
 		path: '/customer/add',

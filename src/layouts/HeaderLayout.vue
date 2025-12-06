@@ -1,13 +1,20 @@
 <script setup>
 import { HomeOutlined } from "@ant-design/icons-vue";
 import avatarImg from "../assets/images/avatar.png";
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 
 function goToHome() {
   router.push('/customer')
 }
+
+function goToOpportunity() {
+  router.push('/opportunity')
+}
+
+const isActive = (path) => route.path.startsWith(path)
 
 </script>
 <template>
@@ -27,12 +34,12 @@ function goToHome() {
           <span class="nav-text">Bàn làm việc</span>
         </div>
 
-        <div class="nav-item active">
+        <div class="nav-item" :class="{ active: isActive('/customer') }" @click="goToHome">
           <div class="icon-default icon-customer"></div>
-          <span class="nav-text" @click="goToHome">Khách hàng</span>
+          <span class="nav-text">Khách hàng</span>
         </div>
 
-        <div class="nav-item">
+        <div class="nav-item" :class="{ active: isActive('/opportunity') }" @click="goToOpportunity">
           <div class="icon-default icon-opportunity"></div>
           <span class="nav-text">Cơ hội</span>
         </div>
@@ -80,11 +87,9 @@ function goToHome() {
 }
 .header .header-left {
   width: 900px;
-  /* màu nền (ví dụ): lime */
 }
 .header .header-right {
   width: 560px;
-  /* màu nền (ví dụ): yellowgreen */
 }
 .header-right__inner {
   height: 48px;

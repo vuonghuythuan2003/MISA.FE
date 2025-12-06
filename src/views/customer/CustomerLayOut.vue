@@ -13,6 +13,7 @@ import toastr from "toastr";
 import MsPagination from "@/components/ms-paginatuion/MsPagination.vue";
 import MsButton from "@/components/ms-button/MsButton.vue";
 import customerAPI from "@/apis/components/CustomerAPI.js";
+import { Modal } from "ant-design-vue";
 
 // Helper
 const formatDate = (value) => {
@@ -206,21 +207,31 @@ const handlePageSizeChange = (size) => {
   fetchCustomers();
 };
 
-const handleDelete = async (customer) => {
-  if (confirm(`Bạn có chắc muốn xóa khách hàng "${customer.name}"?`)) {
-    try {
-      isLoading.value = true;
-      await customerAPI.delete(customer.customerId);
-      toastr.success(`Đã xóa khách hàng "${customer.name}" thành công`);
-      fetchCustomers();
-    } catch (error) {
-      console.error("Lỗi khi xóa khách hàng:", error);
-      toastr.error("Lỗi khi xóa khách hàng");
-      errorMessage.value = "Lỗi khi xóa khách hàng";
-    } finally {
-      isLoading.value = false;
-    }
-  }
+const handleDelete = (customer) => {
+  Modal.confirm({
+    title: "Xác nhận xóa",
+    content: `Bạn có chắc muốn xóa khách hàng "${customer.name}"?`,
+    centered: true,
+    okText: "Xóa",
+    okType: "danger",
+    cancelText: "Hủy",
+    autoFocusButton: "cancel",
+    onOk: () =>
+      (async () => {
+        try {
+          isLoading.value = true;
+          await customerAPI.delete(customer.customerId);
+          toastr.success(`Đã xóa khách hàng "${customer.name}" thành công`);
+          fetchCustomers();
+        } catch (error) {
+          console.error("Lỗi khi xóa khách hàng:", error);
+          toastr.error("Lỗi khi xóa khách hàng");
+          errorMessage.value = "Lỗi khi xóa khách hàng";
+        } finally {
+          isLoading.value = false;
+        }
+      })(),
+  });
 };
 
 const handleEditCustomer = async (customer) => {

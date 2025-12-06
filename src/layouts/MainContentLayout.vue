@@ -7,6 +7,7 @@ import { FileExcelOutlined } from "@ant-design/icons-vue";
 import { useRouter } from "vue-router";
 import customerAPI from "../apis/components/CustomerAPI.js";
 import toastr from "toastr";
+import { Modal } from "ant-design-vue";
 
 const router = useRouter();
 
@@ -57,90 +58,109 @@ function goToAdd() {
 async function handleDeleteMultiple() {
   if (!selectedIds.value.length || isDeletingMany.value) return;
 
-  const confirmed = window.confirm(
-    `Bạn có chắc muốn xóa ${selectedIds.value.length} khách hàng đã chọn?`
-  );
-  if (!confirmed) return;
-
-  try {
-    isDeletingMany.value = true;
-    await customerAPI.deleteMany(selectedIds.value);
-    toastr.success("Đã xóa khách hàng đã chọn thành công");
-    refreshKey.value += 1; // Tải lại danh sách
-  } catch (error) {
-    console.error("Lỗi khi xóa nhiều khách hàng:", error);
-    const message =
-      error?.response?.data?.userMessage ||
-      error?.response?.data?.message ||
-      "Lỗi khi xóa nhiều khách hàng";
-    toastr.error(message);
-  } finally {
-    isDeletingMany.value = false;
-  }
+  Modal.confirm({
+    title: "Xác nhận xóa",
+    content: `Bạn có chắc muốn xóa ${selectedIds.value.length} khách hàng đã chọn?`,
+    centered: true,
+    okText: "Xóa",
+    okType: "danger",
+    cancelText: "Hủy",
+    autoFocusButton: "cancel",
+    onOk: () =>
+      (async () => {
+        try {
+          isDeletingMany.value = true;
+          await customerAPI.deleteMany(selectedIds.value);
+          toastr.success("Đã xóa khách hàng đã chọn thành công");
+          refreshKey.value += 1; // Tải lại danh sách
+        } catch (error) {
+          console.error("Lỗi khi xóa nhiều khách hàng:", error);
+          const message =
+            error?.response?.data?.userMessage ||
+            error?.response?.data?.message ||
+            "Lỗi khi xóa nhiều khách hàng";
+          toastr.error(message);
+        } finally {
+          isDeletingMany.value = false;
+        }
+      })(),
+  });
 }
 
 // Xử lý xuất CSV
-async function handleExportCsv() {
+function handleExportCsv() {
   if (!selectedItems.value.length || isExportingCsv.value) return;
 
-  try {
-    isExportingCsv.value = true;
+  Modal.confirm({
+    title: "Xuất CSV",
+    content: `Xuất ${selectedItems.value.length} khách hàng đã chọn ra CSV?`,
+    centered: true,
+    okText: "Xuất",
+    okType: "primary",
+    cancelText: "Hủy",
+    autoFocusButton: "cancel",
+    onOk: () =>
+      (async () => {
+        try {
+          isExportingCsv.value = true;
 
-    const escapeCsv = (value) => {
-      if (value === null || value === undefined) return "";
-      const str = String(value);
-      return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
-    };
+          const escapeCsv = (value) => {
+            if (value === null || value === undefined) return "";
+            const str = String(value);
+            return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+          };
 
-    const headers = [
-      "STT",
-      "Mã khách hàng",
-      "Tên khách hàng",
-      "Loại khách hàng",
-      "Số điện thoại",
-      "Email",
-      "Địa chỉ",
-      "Địa chỉ giao hàng",
-      "Mã số thuế",
-      "Ngày mua gần nhất",
-      "Mã hàng đã mua",
-      "Tên hàng đã mua",
-    ];
+          const headers = [
+            "STT",
+            "Mã khách hàng",
+            "Tên khách hàng",
+            "Loại khách hàng",
+            "Số điện thoại",
+            "Email",
+            "Địa chỉ",
+            "Địa chỉ giao hàng",
+            "Mã số thuế",
+            "Ngày mua gần nhất",
+            "Mã hàng đã mua",
+            "Tên hàng đã mua",
+          ];
 
-    const lines = selectedItems.value.map((item, index) => [
-      index + 1,
-      item.code,
-      item.name,
-      item.type,
-      item.phone,
-      item.email,
-      item.address,
-      item.shippingAddress,
-      item.taxCode,
-      item.lastDate,
-      item.goodsCode,
-      item.goodsName,
-    ].map(escapeCsv).join(","));
+          const lines = selectedItems.value.map((item, index) => [
+            index + 1,
+            item.code,
+            item.name,
+            item.type,
+            item.phone,
+            item.email,
+            item.address,
+            item.shippingAddress,
+            item.taxCode,
+            item.lastDate,
+            item.goodsCode,
+            item.goodsName,
+          ].map(escapeCsv).join(","));
 
-    const csvContent = [headers.join(","), ...lines].join("\n");
-    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+          const csvContent = [headers.join(","), ...lines].join("\n");
+          const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
 
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "DanhSachKhachHang.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.setAttribute("download", "DanhSachKhachHang.csv");
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
 
-    toastr.success("Xuất CSV thành công");
-  } catch (error) {
-    console.error("Lỗi khi xuất CSV:", error);
-    toastr.error("Lỗi khi xuất CSV");
-  } finally {
-    isExportingCsv.value = false;
-  }
+          toastr.success("Xuất CSV thành công");
+        } catch (error) {
+          console.error("Lỗi khi xuất CSV:", error);
+          toastr.error("Lỗi khi xuất CSV");
+        } finally {
+          isExportingCsv.value = false;
+        }
+      })(),
+  });
 }
 
 // Sau khi import CSV thành công, đóng popup và tăng refresh key để CustomerLayOut fetch lại
@@ -511,11 +531,14 @@ function handleSelectionChange(payload) {
 .btn-delete-multiple{
   width: 100px;
   margin-left: 20px;
-  background-color: #FF0000;
+  background-color: #FFF;
+  color: #FF0000;
   height: 30px;
+  border : 1px solid #FF0000;
+
 }
 .btn-delete-multiple:hover {
-  background-color: #cc0000;  
+  background-color: rgb(226, 221, 221); 
 }
 
 </style>
