@@ -87,7 +87,7 @@ const filterOption = (input, option) => {
 }
 
 .ms-selected--error .custom-select :deep(.ant-select-selector) {
-  border-color: #faad14 !important; /* match warning/yellow style */
+  border-color: #faad14 !important;
 }
 
 .ms-selected-wrapper .flex-1 :deep(.ant-select-selector) {
@@ -96,13 +96,12 @@ const filterOption = (input, option) => {
 }
 
 .ms-selected__error {
-  color: #faad14; /* yellow warning text */
+  color: #faad14;
   font-size: 12px;
   margin-top: 4px;
   line-height: 1.5;
 }
 
-/* Custom Ant Design Select */
 .custom-select {
   width: 100%;
 }

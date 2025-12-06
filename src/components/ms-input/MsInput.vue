@@ -304,12 +304,10 @@ defineExpose({
   cursor: not-allowed;
 }
 
-/* Với icon prefix */
 .ms-input__prefix + .ms-input__field {
   padding-left: 40px;
 }
 
-/* Với icon suffix */
 .ms-input:has(.ms-input__suffix) .ms-input__field {
   padding-right: 40px;
 }
@@ -327,7 +325,6 @@ defineExpose({
   color: #757575;
 }
 
-/* Trạng thái lỗi */
 .ms-input--error .ms-input__field {
   border-color: #faad14;
 }
@@ -337,7 +334,6 @@ defineExpose({
   box-shadow: 0 0 0 3px rgba(250, 173, 20, 0.1);
 }
 
-/* Trạng thái vô hiệu hóa */
 .ms-input--disabled {
   opacity: 0.6;
   pointer-events: none;

@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, nextTick } from "vue";
+import dayjs from "dayjs";
 import { useRouter } from "vue-router";
 import toastr from "toastr";
 import MsButton from "../../components/ms-button/MsButton.vue";
@@ -42,6 +43,17 @@ const formData = ref({
   purchasedGoods: "",
   purchasedGoodsName: "",
 });
+
+const toApiDate = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "" || normalized === "null") return null; // allow empty/"null" to be treated as no date
+  }
+  if (value?.toISOString) return value.toISOString();
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.toISOString() : null;
+};
 
 // Trạng thái lỗi validate trả về từ backend
 const validationErrors = ref({
@@ -163,8 +175,8 @@ const focusFirstInvalid = async () => {
     { key: "customerName", ref: customerNameRef },
     { key: "customerPhoneNumber", ref: phoneRef },
     { key: "customerEmail", ref: emailRef },
-    { key: "customerTaxCode", ref: taxCodeRef },
     { key: "customerShippingAddress", ref: shippingAddressRef },
+    { key: "customerTaxCode", ref: taxCodeRef },
   ];
 
   await nextTick();
@@ -182,7 +194,6 @@ const validateRequired = () => {
     { key: "customerName", value: formData.value.customerName, ref: customerNameRef, message: "Tên khách hàng không được để trống" },
     { key: "customerPhoneNumber", value: formData.value.phone, ref: phoneRef, message: "Số điện thoại không được để trống" },
     { key: "customerEmail", value: formData.value.email, ref: emailRef, message: "Email không được để trống" },
-    { key: "customerTaxCode", value: formData.value.taxCode, ref: taxCodeRef, message: "Mã số thuế không được để trống" },
     { key: "customerShippingAddress", value: formData.value.shippingAddress, ref: shippingAddressRef, message: "Địa chỉ giao hàng không được để trống" },
   ];
 
@@ -234,7 +245,10 @@ const handleSave = async () => {
     formDataWithFile.append('customerShippingAddress', formData.value.shippingAddress);
     formDataWithFile.append('customerPhoneNumber', formData.value.phone);
     formDataWithFile.append('customerEmail', formData.value.email);
-    formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate);
+    const apiDate = toApiDate(formData.value.lastPurchaseDate);
+    if (apiDate !== null) {
+      formDataWithFile.append('lastPurchaseDate', apiDate);
+    }
     formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
     formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
 
@@ -327,7 +341,10 @@ const handleSaveAndAdd = async () => {
     formDataWithFile.append('customerShippingAddress', formData.value.shippingAddress);
     formDataWithFile.append('customerPhoneNumber', formData.value.phone);
     formDataWithFile.append('customerEmail', formData.value.email);
-    formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate);
+    const apiDate = toApiDate(formData.value.lastPurchaseDate);
+    if (apiDate !== null) {
+      formDataWithFile.append('lastPurchaseDate', apiDate);
+    }
     formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
     formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
 
@@ -540,17 +557,6 @@ onMounted(() => {
           <!-- Cột phải -->
           <div class="col-right">
             <div class="form-item flex-row align-center">
-              <label class="form-label">Mã số thuế <span class="required">*</span></label>
-              <div class="input-wrapper">
-                <MsInput
-                  v-model="formData.taxCode"
-                  :error="validationErrors.customerTaxCode"
-                  ref="taxCodeRef"
-                />
-              </div>
-            </div>
-
-            <div class="form-item flex-row align-center">
               <label class="form-label">Địa chỉ giao hàng <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
@@ -562,8 +568,18 @@ onMounted(() => {
             </div>
 
             <div class="form-item flex-row align-center">
-              <label class="form-label">Ngày mua hàng gần nhất</label>
+              <label class="form-label">Mã số thuế</label>
               <div class="input-wrapper">
+                <MsInput
+                  v-model="formData.taxCode"
+                  :error="validationErrors.customerTaxCode"
+                  ref="taxCodeRef"
+                />
+              </div>
+            </div>
+            <div class="form-item flex-row align-center">
+              <label class="form-label">Ngày mua hàng gần nhất</label>
+              <div class="input-wrapper-date">
                 <MsDate
                   v-model="formData.lastPurchaseDate"
                   :error="validationErrors.lastPurchaseDate"
@@ -670,10 +686,10 @@ onMounted(() => {
   padding: 32px;
   background-color: #ffffff;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
-/* Phần ảnh */
 .section-image {
   background: transparent;
   margin-bottom: 16px;
@@ -712,7 +728,6 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* Phần thông tin chung */
 .general-info-section {
   background-color: #ffffff;
   padding: 0 24px 40px;
@@ -758,11 +773,13 @@ onMounted(() => {
   font-family: Inter, sans-serif;
   display: inline-flex;
   align-items: center;
+  height: 32px;
+  line-height: 32px;
   width: 160px;
   min-width: 160px;
   flex: 0 0 160px;
   color: #1f2229;
-  padding-top: 8px;
+  padding-top: 0;
 }
 
 .col-right .form-label {
@@ -784,7 +801,6 @@ onMounted(() => {
   position: relative;
 }
 
-/* Ghi đè style của MsInput để phù hợp với form */
 .input-wrapper :deep(.ms-input) {
   gap: 0;
 }
@@ -805,9 +821,9 @@ onMounted(() => {
 .input-wrapper :deep(.ms-input__message) {
   display: block; 
   margin-top: 4px;
+  color: #f59e0b !important;
 }
 
-/* Ghi đè style của MsDate để phù hợp với form */
 .input-wrapper :deep(.input-container) {
   gap: 0;
 }
@@ -906,7 +922,6 @@ onMounted(() => {
   margin-left: 2px;
 }
 
-/* Flex utilities */
 .flex-row {
   display: flex;
   flex-direction: row;
@@ -922,5 +937,14 @@ onMounted(() => {
 
 .icon-down {
   margin-left: 7px;
+}
+.input-wrapper-date{
+  width: 100%;
+  border-radius : 2px !important;
+  height: 32px;
+}
+
+.input-wrapper-date :deep(.ms-input__message) {
+  color: #f59e0b !important;
 }
 </style>

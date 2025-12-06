@@ -549,7 +549,6 @@ tbody tr:hover .action-buttons {
 tbody tr:hover .td-checkbox {
   background-color: #e7ebfd;
 }
-/* Style cho các icon trong phân trang */
 :deep(.nav-icon) {
   color: #bbbec6;
 }
@@ -563,7 +562,6 @@ tbody tr:hover .td-checkbox {
   margin-right: 6px;
 }
 
-/* Cột hành động */
 .th-actions,
 .td-actions {
   width: 80px;

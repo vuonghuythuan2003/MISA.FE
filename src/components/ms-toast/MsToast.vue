@@ -33,5 +33,4 @@ export default {
 </template>
 
 <style scoped>
-/* Toastr CSS được import từ thư viện, không cần style riêng */
 </style>

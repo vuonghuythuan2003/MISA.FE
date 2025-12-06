@@ -1,9 +1,11 @@
 <script setup>
 import { onMounted, ref, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import dayjs from "dayjs";
 import toastr from "toastr";
 import MsButton from "../../components/ms-button/MsButton.vue";
 import MsInput from "../../components/ms-input/MsInput.vue";
+import MsDate from "../../components/ms-date/MsDate.vue";
 import customerAPI from "@/apis/components/CustomerAPI.js";
 
 const route = useRoute();
@@ -103,7 +105,7 @@ const loadCustomerData = async () => {
         address: customer.customerShippingAddress || customer.customerAddress || "",
         phone: customer.customerPhoneNumber || "",
         email: customer.customerEmail || "",
-        lastPurchaseDate: customer.lastPurchaseDate || "",
+        lastPurchaseDate: customer.lastPurchaseDate ? dayjs(customer.lastPurchaseDate) : null,
         purchasedGoods: customer.purchasedItemCode || "",
         purchasedGoodsName: customer.purchasedItemName || "",
       };
@@ -135,8 +137,8 @@ const focusFirstInvalid = async () => {
     { key: "customerName", ref: customerNameRef },
     { key: "customerPhoneNumber", ref: phoneRef },
     { key: "customerEmail", ref: emailRef },
-    { key: "customerTaxCode", ref: taxCodeRef },
     { key: "customerAddress", ref: shippingAddressRef },
+    { key: "customerTaxCode", ref: taxCodeRef },
   ];
 
   await nextTick();
@@ -154,7 +156,6 @@ const validateRequired = () => {
     { key: "customerName", value: formData.value.customerName, ref: customerNameRef, message: "Tên khách hàng không được để trống" },
     { key: "customerPhoneNumber", value: formData.value.phone, ref: phoneRef, message: "Số điện thoại không được để trống" },
     { key: "customerEmail", value: formData.value.email, ref: emailRef, message: "Email không được để trống" },
-    { key: "customerTaxCode", value: formData.value.taxCode, ref: taxCodeRef, message: "Mã số thuế không được để trống" },
     { key: "customerAddress", value: formData.value.address, ref: shippingAddressRef, message: "Địa chỉ giao hàng không được để trống" },
   ];
 
@@ -200,7 +201,7 @@ const handleSave = async () => {
       formDataWithFile.append('customerShippingAddress', formData.value.address);
       formDataWithFile.append('customerPhoneNumber', formData.value.phone);
       formDataWithFile.append('customerEmail', formData.value.email);
-      formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate || '');
+      formDataWithFile.append('lastPurchaseDate', formData.value.lastPurchaseDate ? dayjs(formData.value.lastPurchaseDate).toISOString() : '');
       formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
       formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
 
@@ -214,7 +215,7 @@ const handleSave = async () => {
         customerShippingAddress: formData.value.address,
         customerPhoneNumber: formData.value.phone,
         customerEmail: formData.value.email,
-        lastPurchaseDate: formData.value.lastPurchaseDate || null,
+        lastPurchaseDate: formData.value.lastPurchaseDate ? dayjs(formData.value.lastPurchaseDate).toISOString() : null,
         purchasedItemCode: formData.value.purchasedGoods,
         purchasedItemName: formData.value.purchasedGoodsName,
       };
@@ -377,17 +378,6 @@ onMounted(() => {
           <!-- Cột phải -->
           <div class="col-right">
             <div class="form-item flex-row align-center">
-              <label class="form-label">Mã số thuế <span class="required">*</span></label>
-              <div class="input-wrapper">
-                <MsInput
-                  v-model="formData.taxCode"
-                  :error="validationErrors.customerTaxCode"
-                  ref="taxCodeRef"
-                />
-              </div>
-            </div>
-
-            <div class="form-item flex-row align-center">
               <label class="form-label">Địa chỉ (Giao hàng) <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
@@ -399,13 +389,24 @@ onMounted(() => {
             </div>
 
             <div class="form-item flex-row align-center">
-              <label class="form-label">Ngày mua hàng gần nhất</label>
+              <label class="form-label">Mã số thuế</label>
               <div class="input-wrapper">
                 <MsInput
+                  v-model="formData.taxCode"
+                  :error="validationErrors.customerTaxCode"
+                  ref="taxCodeRef"
+                />
+              </div>
+            </div>
+
+            <div class="form-item flex-row align-center">
+              <label class="form-label">Ngày mua hàng gần nhất</label>
+              <div class="input-wrapper">
+                <MsDate
                   v-model="formData.lastPurchaseDate"
-                  type="text"
-                  placeholder="dd/mm/yyyy"
                   :error="validationErrors.lastPurchaseDate"
+                  placeholder="dd/mm/yyyy"
+                  format="DD/MM/YYYY"
                 />
               </div>
             </div>
@@ -440,6 +441,8 @@ onMounted(() => {
 .container-add-customer {
   background-color: #f5f5f5;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .toolbar {
@@ -505,9 +508,11 @@ onMounted(() => {
 .page-content {
   padding: 32px;
   background-color: #fff;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
-/* Phần ảnh */
 .section-image {
   background: transparent;
   margin-bottom: 16px;
@@ -545,7 +550,6 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* Phần thông tin chung */
 .general-info-section {
   background-color: #ffffff;
   padding: 0 24px 40px;
@@ -561,10 +565,10 @@ onMounted(() => {
 }
 
 .form-grid {
-  display: flex;
-  gap: 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
   align-items: flex-start;
-  padding-right: 200px;
 }
 
 .col-left,
@@ -594,11 +598,13 @@ onMounted(() => {
   font-family: Inter, sans-serif;
   display: inline-flex;
   align-items: center;
+  height: 32px;
+  line-height: 32px;
   width: 160px;
   min-width: 160px;
   flex: 0 0 160px;
   color: #1f2229;
-  padding-top: 8px;
+  padding-top: 0;
 }
 
 .input-wrapper {
@@ -607,7 +613,6 @@ onMounted(() => {
   position: relative;
 }
 
-/* Ghi đè style của MsInput để phù hợp với form */
 .input-wrapper :deep(.ms-input) {
   gap: 0;
 }
@@ -624,7 +629,7 @@ onMounted(() => {
 }
 
 .input-wrapper :deep(.ms-input__message) {
-  display: block; /* allow error text to show */
+  display: block;
   margin-top: 4px;
 }
 
@@ -633,7 +638,6 @@ onMounted(() => {
   margin-left: 2px;
 }
 
-/* Flex utilities */
 .flex-row {
   display: flex;
   flex-direction: row;

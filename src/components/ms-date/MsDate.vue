@@ -110,7 +110,6 @@ const handleChange = (date, dateString) => {
 .date-picker-custom :deep(.ant-picker) {
   width: 100%;
   height: 31px;
-  border-radius: 4px;
   border: 1px solid #d9d9d9;
 }
 
@@ -144,7 +143,6 @@ const handleChange = (date, dateString) => {
   width: 100%;
   height: 31px;
   border: 1px solid #e0e0e0;
-  border-radius: 4px;
   font-size: 14px;
 }
 

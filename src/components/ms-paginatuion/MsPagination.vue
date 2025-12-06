@@ -378,7 +378,6 @@ defineExpose({
   font-weight: 700;
 }
 
-/* Flex utilities */
 .flex-row {
   display: flex;
   flex-direction: row;

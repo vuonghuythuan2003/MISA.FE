@@ -471,7 +471,6 @@ function handleSelectionChange(payload) {
   border-color: #7c869c;
 }
 
-/* Hover effects cho các nút khác */
 .toolbar-left .customer-dropdown {
   transition: all 0.3s ease;
 }
