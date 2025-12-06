@@ -103,11 +103,14 @@ const headers = [
   { key: "purchasedItemName", label: "Tên hàng hóa đã mua", width: "197px" },
 ];
 
-// Biến lưu trữ các ID khách hàng được chọn
+// Biến lưu trữ các ID khách hàng được chọn và danh sách bản ghi đã chọn
 const selectedIds = ref(new Set());
+const selectedItems = ref([]);
 
 const emitSelection = () => {
-  emit('selection-change', Array.from(selectedIds.value));
+  const idsArray = Array.from(selectedIds.value);
+  selectedItems.value = customers.value.filter((c) => selectedIds.value.has(c.customerId));
+  emit('selection-change', { ids: idsArray, items: selectedItems.value });
 };
 
 // Kiểm tra tất cả đã được chọn chưa
@@ -188,6 +191,7 @@ const fetchCustomers = async () => {
         phone: customer.customerPhoneNumber || '-',
         taxCode: customer.customerTaxCode || '-',
         address: customer.customerShippingAddress || '-',
+        shippingAddress: customer.customerShippingAddress || '-',
         lastDate: formatDate(customer.lastPurchaseDate),
         goodsCode: customer.purchasedItemCode || '-',
         goodsName: customer.purchasedItemName || '-'
@@ -211,6 +215,7 @@ const fetchCustomers = async () => {
     isLoading.value = false;
     // Reset selection after data refresh
     selectedIds.value = new Set();
+    selectedItems.value = [];
     emitSelection();
   }
 };

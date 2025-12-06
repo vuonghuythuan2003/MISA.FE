@@ -72,6 +72,15 @@ class CustomerAPI extends BaseAPI {
             }
         });
     }
+
+    /**
+     * Xóa mềm nhiều khách hàng
+     * @param {Array<string>} ids - Danh sách ID khách hàng cần xóa
+     * @returns {Promise} Response từ API
+     */
+    deleteMany(ids) {
+        return api.post(`/${this.controller}/delete-many`, ids);
+    }
 }
 
 export default new CustomerAPI();

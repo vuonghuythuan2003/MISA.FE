@@ -5,6 +5,8 @@ import MsUpload from "../components/ms-upload/MsUpload.vue";
 import CustomerLayOut from "../views/customer/CustomerLayOut.vue";
 import { FileExcelOutlined } from "@ant-design/icons-vue";
 import { useRouter } from "vue-router";
+import customerAPI from "../apis/components/CustomerAPI.js";
+import toastr from "toastr";
 
 const router = useRouter();
 
@@ -16,6 +18,14 @@ const refreshKey = ref(0);
 
 // Trạng thái chọn bản ghi để hiển thị các nút hành động
 const hasSelection = ref(false);
+
+// Danh sách ID đã chọn
+const selectedIds = ref([]);
+const selectedItems = ref([]);
+
+// Trạng thái xử lý
+const isDeletingMany = ref(false);
+const isExportingCsv = ref(false);
 
 // Trạng thái tìm kiếm & lọc
 const searchKeyword = ref("");
@@ -33,13 +43,104 @@ watch(searchKeyword, (newValue) => {
   }, 300);
 });
 
-function goToDeleteMultiple() {
-  router.push("/customer/delete-multiple");
-}
-
 // Mở popup nhập từ Excel
 function openExcelImport() {
   showUploadPopup.value = true;
+}
+
+// Điều hướng sang trang thêm mới
+function goToAdd() {
+  router.push("/customer/add");
+}
+
+// Xử lý xóa nhiều khách hàng
+async function handleDeleteMultiple() {
+  if (!selectedIds.value.length || isDeletingMany.value) return;
+
+  const confirmed = window.confirm(
+    `Bạn có chắc muốn xóa ${selectedIds.value.length} khách hàng đã chọn?`
+  );
+  if (!confirmed) return;
+
+  try {
+    isDeletingMany.value = true;
+    await customerAPI.deleteMany(selectedIds.value);
+    toastr.success("Đã xóa khách hàng đã chọn thành công");
+    refreshKey.value += 1; // reload danh sách
+  } catch (error) {
+    console.error("Lỗi khi xóa nhiều khách hàng:", error);
+    const message =
+      error?.response?.data?.userMessage ||
+      error?.response?.data?.message ||
+      "Lỗi khi xóa nhiều khách hàng";
+    toastr.error(message);
+  } finally {
+    isDeletingMany.value = false;
+  }
+}
+
+// Xử lý xuất CSV
+async function handleExportCsv() {
+  if (!selectedItems.value.length || isExportingCsv.value) return;
+
+  try {
+    isExportingCsv.value = true;
+
+    const escapeCsv = (value) => {
+      if (value === null || value === undefined) return "";
+      const str = String(value);
+      return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    };
+
+    const headers = [
+      "STT",
+      "Mã khách hàng",
+      "Tên khách hàng",
+      "Loại khách hàng",
+      "Số điện thoại",
+      "Email",
+      "Địa chỉ",
+      "Địa chỉ giao hàng",
+      "Mã số thuế",
+      "Ngày mua gần nhất",
+      "Mã hàng đã mua",
+      "Tên hàng đã mua",
+    ];
+
+    const lines = selectedItems.value.map((item, index) => [
+      index + 1,
+      item.code,
+      item.name,
+      item.type,
+      item.phone,
+      item.email,
+      item.address,
+      item.shippingAddress,
+      item.taxCode,
+      item.lastDate,
+      item.goodsCode,
+      item.goodsName,
+    ].map(escapeCsv).join(","));
+
+    const csvContent = [headers.join(","), ...lines].join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "DanhSachKhachHang.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    toastr.success("Xuất CSV thành công");
+  } catch (error) {
+    console.error("Lỗi khi xuất CSV:", error);
+    toastr.error("Lỗi khi xuất CSV");
+  } finally {
+    isExportingCsv.value = false;
+  }
 }
 
 // Sau khi import CSV thành công, đóng popup và tăng refresh key để CustomerLayOut fetch lại
@@ -48,8 +149,12 @@ function handleImported() {
 }
 
 // Nhận danh sách ID được chọn từ CustomerLayOut
-function handleSelectionChange(selectedIds) {
-  hasSelection.value = Array.isArray(selectedIds) && selectedIds.length > 0;
+function handleSelectionChange(payload) {
+  const ids = payload?.ids || [];
+  const items = payload?.items || [];
+  selectedIds.value = Array.isArray(ids) ? ids : [];
+  selectedItems.value = Array.isArray(items) ? items : [];
+  hasSelection.value = selectedIds.value.length > 0;
 }
 </script>
 
@@ -74,7 +179,8 @@ function handleSelectionChange(selectedIds) {
           class="btn-delete-multiple align-center justify-content-center" 
           type="primary"
           v-show="hasSelection"
-          @click="goToDeleteMultiple"
+          :disabled="isDeletingMany"
+          @click="handleDeleteMultiple"
           >Xóa nhiều</MsButton
         >
         <!-- Nút Xuất từ CSV -->
@@ -82,12 +188,13 @@ function handleSelectionChange(selectedIds) {
           class="btn-excel-export align-center justify-content-center"
           type="link"
           v-show="hasSelection"
-          @click="openExcelImport"
+          :disabled="isExportingCsv"
+          @click="handleExportCsv"
         >
           <template #icon-left>
             <FileExcelOutlined />
           </template>
-          Xuất từ CSV
+          Xuất CSV
         </MsButton>
       </div>
       <!-- Bố cục thanh công cụ (phần phải) -->
