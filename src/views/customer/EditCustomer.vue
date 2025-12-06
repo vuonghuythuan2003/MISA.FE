@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import toastr from "toastr";
 import MsButton from "../../components/ms-button/MsButton.vue";
@@ -10,10 +10,16 @@ const route = useRoute();
 const router = useRouter();
 const isLoading = ref(false);
 
-// State cho ảnh đại diện
+// Trạng thái ảnh đại diện
 const avatarFile = ref(null);
 const avatarPreview = ref(null);
 const avatarInput = ref(null);
+const customerTypeRef = ref(null);
+const customerNameRef = ref(null);
+const phoneRef = ref(null);
+const emailRef = ref(null);
+const taxCodeRef = ref(null);
+const shippingAddressRef = ref(null);
 
 // Dữ liệu form
 const formData = ref({
@@ -29,7 +35,7 @@ const formData = ref({
   purchasedGoodsName: "",
 });
 
-// State cho validation errors từ backend
+// Trạng thái lỗi validate trả về từ backend
 const validationErrors = ref({
   customerType: "",
   customerCode: "",
@@ -43,7 +49,7 @@ const validationErrors = ref({
   purchasedItemName: "",
 });
 
-// Clear error khi user chỉnh sửa
+// Xóa thông báo lỗi khi người dùng chỉnh sửa
 watch(() => formData.value.customerName, () => validationErrors.value.customerName = "");
 watch(() => formData.value.customerType, () => validationErrors.value.customerType = "");
 watch(() => formData.value.customerCode, () => validationErrors.value.customerCode = "");
@@ -72,7 +78,7 @@ const handleAvatarClick = () => {
   avatarInput.value?.click();
 };
 
-// Load dữ liệu khách hàng từ API
+// Tải dữ liệu khách hàng từ API
 const loadCustomerData = async () => {
   try {
     isLoading.value = true;
@@ -113,6 +119,56 @@ const loadCustomerData = async () => {
   }
 };
 
+const focusField = (refEl) => {
+  if (!refEl) return;
+  if (typeof refEl.focus === "function") {
+    refEl.focus();
+  } else if (refEl?.$el) {
+    const inputEl = refEl.$el.querySelector("input");
+    inputEl?.focus();
+  }
+};
+
+const focusFirstInvalid = async () => {
+  const order = [
+    { key: "customerType", ref: customerTypeRef },
+    { key: "customerName", ref: customerNameRef },
+    { key: "customerPhoneNumber", ref: phoneRef },
+    { key: "customerEmail", ref: emailRef },
+    { key: "customerTaxCode", ref: taxCodeRef },
+    { key: "customerAddress", ref: shippingAddressRef },
+  ];
+
+  await nextTick();
+  for (const item of order) {
+    if (validationErrors.value[item.key]) {
+      focusField(item.ref?.value ?? item.ref);
+      break;
+    }
+  }
+};
+
+const validateRequired = () => {
+  const checks = [
+    { key: "customerType", value: formData.value.customerType, ref: customerTypeRef, message: "Loại khách hàng không được để trống" },
+    { key: "customerName", value: formData.value.customerName, ref: customerNameRef, message: "Tên khách hàng không được để trống" },
+    { key: "customerPhoneNumber", value: formData.value.phone, ref: phoneRef, message: "Số điện thoại không được để trống" },
+    { key: "customerEmail", value: formData.value.email, ref: emailRef, message: "Email không được để trống" },
+    { key: "customerTaxCode", value: formData.value.taxCode, ref: taxCodeRef, message: "Mã số thuế không được để trống" },
+    { key: "customerAddress", value: formData.value.address, ref: shippingAddressRef, message: "Địa chỉ giao hàng không được để trống" },
+  ];
+
+  for (const item of checks) {
+    if (!item.value || String(item.value).trim() === "") {
+      validationErrors.value[item.key] = item.message;
+      focusField(item.ref?.value ?? item.ref);
+      toastr.error(item.message);
+      return false;
+    }
+  }
+  return true;
+};
+
 // Xử lý lưu khách hàng
 const handleSave = async () => {
   validationErrors.value = {
@@ -127,6 +183,8 @@ const handleSave = async () => {
     purchasedItemCode: "",
     purchasedItemName: "",
   };
+
+  if (!validateRequired()) return;
 
   try {
     isLoading.value = true;
@@ -192,6 +250,7 @@ const handleSave = async () => {
           validationErrors.value[frontendField] = errorMessage;
         }
       }
+      await focusFirstInvalid();
       toastr.error('Vui lòng kiểm tra lại thông tin nhập vào');
     } else if (error.response?.data?.message) {
       toastr.error(error.response.data.message);
@@ -262,6 +321,7 @@ onMounted(() => {
                   placeholder="- Không chọn -"
                   readonly
                   :error="validationErrors.customerType"
+                  ref="customerTypeRef"
                 />
               </div>
             </div>
@@ -284,6 +344,7 @@ onMounted(() => {
                   v-model="formData.customerName"
                   :required="true"
                   :error="validationErrors.customerName"
+                  ref="customerNameRef"
                 />
               </div>
             </div>
@@ -295,6 +356,7 @@ onMounted(() => {
                   v-model="formData.phone"
                   type="tel"
                   :error="validationErrors.customerPhoneNumber"
+                  ref="phoneRef"
                 />
               </div>
             </div>
@@ -306,6 +368,7 @@ onMounted(() => {
                   v-model="formData.email"
                   type="email"
                   :error="validationErrors.customerEmail"
+                  ref="emailRef"
                 />
               </div>
             </div>
@@ -319,6 +382,7 @@ onMounted(() => {
                 <MsInput
                   v-model="formData.taxCode"
                   :error="validationErrors.customerTaxCode"
+                  ref="taxCodeRef"
                 />
               </div>
             </div>
@@ -329,6 +393,7 @@ onMounted(() => {
                 <MsInput
                   v-model="formData.address"
                   :error="validationErrors.customerAddress"
+                  ref="shippingAddressRef"
                 />
               </div>
             </div>

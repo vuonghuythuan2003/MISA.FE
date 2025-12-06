@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import toastr from "toastr";
 import MsButton from "../../components/ms-button/MsButton.vue";
@@ -11,17 +11,23 @@ import customerAPI from "@/apis/components/CustomerAPI.js";
 const router = useRouter();
 const isLoading = ref(false);
 
-// Customer type options
+// Danh sách tùy chọn loại khách hàng
 const customerTypeOptions = [
   { label: 'NBH01', value: 'NBH01' },
   { label: 'LKHA', value: 'LKHA' },
   { label: 'VIP', value: 'VIP' },
 ];
 
-// State cho ảnh đại diện
+// Trạng thái ảnh đại diện
 const avatarFile = ref(null);
 const avatarPreview = ref(null);
 const avatarInput = ref(null);
+const customerTypeRef = ref(null);
+const customerNameRef = ref(null);
+const phoneRef = ref(null);
+const emailRef = ref(null);
+const taxCodeRef = ref(null);
+const shippingAddressRef = ref(null);
 
 // Dữ liệu form
 const formData = ref({
@@ -37,7 +43,7 @@ const formData = ref({
   purchasedGoodsName: "",
 });
 
-// State cho validation errors từ backend
+// Trạng thái lỗi validate trả về từ backend
 const validationErrors = ref({
   customerType: "",
   customerCode: "",
@@ -51,7 +57,7 @@ const validationErrors = ref({
   purchasedItemName: "",
 });
 
-// Clear error khi user nhập dữ liệu
+// Xóa thông báo lỗi khi người dùng nhập dữ liệu
 watch(
   () => formData.value.customerType,
   () => {
@@ -141,9 +147,59 @@ const handleAvatarClick = () => {
   avatarInput.value?.click();
 };
 
+const focusField = (refEl) => {
+  if (!refEl) return;
+  if (typeof refEl.focus === "function") {
+    refEl.focus();
+  } else if (refEl?.$el) {
+    const inputEl = refEl.$el.querySelector("input");
+    inputEl?.focus();
+  }
+};
+
+const focusFirstInvalid = async () => {
+  const order = [
+    { key: "customerType", ref: customerTypeRef },
+    { key: "customerName", ref: customerNameRef },
+    { key: "customerPhoneNumber", ref: phoneRef },
+    { key: "customerEmail", ref: emailRef },
+    { key: "customerTaxCode", ref: taxCodeRef },
+    { key: "customerShippingAddress", ref: shippingAddressRef },
+  ];
+
+  await nextTick();
+  for (const item of order) {
+    if (validationErrors.value[item.key]) {
+      focusField(item.ref?.value ?? item.ref);
+      break;
+    }
+  }
+};
+
+const validateRequired = () => {
+  const checks = [
+    { key: "customerType", value: formData.value.customerType, ref: customerTypeRef, message: "Loại khách hàng không được để trống" },
+    { key: "customerName", value: formData.value.customerName, ref: customerNameRef, message: "Tên khách hàng không được để trống" },
+    { key: "customerPhoneNumber", value: formData.value.phone, ref: phoneRef, message: "Số điện thoại không được để trống" },
+    { key: "customerEmail", value: formData.value.email, ref: emailRef, message: "Email không được để trống" },
+    { key: "customerTaxCode", value: formData.value.taxCode, ref: taxCodeRef, message: "Mã số thuế không được để trống" },
+    { key: "customerShippingAddress", value: formData.value.shippingAddress, ref: shippingAddressRef, message: "Địa chỉ giao hàng không được để trống" },
+  ];
+
+  for (const item of checks) {
+    if (!item.value || String(item.value).trim() === "") {
+      validationErrors.value[item.key] = item.message;
+      focusField(item.ref?.value ?? item.ref);
+      toastr.error(item.message);
+      return false;
+    }
+  }
+  return true;
+};
+
 // Xử lý lưu khách hàng
 const handleSave = async () => {
-  // Reset validation errors
+  // Xóa trạng thái lỗi hiện tại
   validationErrors.value = {
     customerType: "",
     customerCode: "",
@@ -157,18 +213,20 @@ const handleSave = async () => {
     purchasedItemName: "",
   };
 
+  if (!validateRequired()) return;
+
   try {
     isLoading.value = true;
     
     // Tạo FormData để gửi lên backend (bao gồm cả file ảnh nếu có)
     const formDataWithFile = new FormData();
     
-    // Append file ảnh nếu có
+    // Thêm file ảnh nếu có
     if (avatarFile.value) {
       formDataWithFile.append('file', avatarFile.value);
     }
     
-    // Append các trường dữ liệu
+    // Thêm các trường dữ liệu
     formDataWithFile.append('customerType', formData.value.customerType);
     formDataWithFile.append('customerCode', formData.value.customerCode);
     formDataWithFile.append('customerName', formData.value.customerName);
@@ -221,6 +279,7 @@ const handleSave = async () => {
       
       console.log('validationErrors sau khi set:', validationErrors.value);
       toastr.error('Vui lòng kiểm tra lại thông tin nhập vào');
+      await focusFirstInvalid();
     } else if (error.response?.data?.message) {
       toastr.error(error.response.data.message);
     } else {
@@ -233,7 +292,7 @@ const handleSave = async () => {
 
 // Xử lý lưu và thêm tiếp
 const handleSaveAndAdd = async () => {
-  // Reset validation errors
+  // Xóa trạng thái lỗi hiện tại
   validationErrors.value = {
     customerType: "",
     customerCode: "",
@@ -247,18 +306,20 @@ const handleSaveAndAdd = async () => {
     purchasedItemName: "",
   };
 
+  if (!validateRequired()) return;
+
   try {
     isLoading.value = true;
     
     // Tạo FormData để gửi lên backend (bao gồm cả file ảnh nếu có)
     const formDataWithFile = new FormData();
     
-    // Append file ảnh nếu có
+    // Thêm file ảnh nếu có
     if (avatarFile.value) {
       formDataWithFile.append('file', avatarFile.value);
     }
     
-    // Append các trường dữ liệu
+    // Thêm các trường dữ liệu
     formDataWithFile.append('customerType', formData.value.customerType);
     formDataWithFile.append('customerCode', formData.value.customerCode);
     formDataWithFile.append('customerName', formData.value.customerName);
@@ -275,7 +336,7 @@ const handleSaveAndAdd = async () => {
     
     toastr.success(`Đã thêm khách hàng "${formData.value.customerName}" thành công`);
     
-    // Reset form cho việc thêm tiếp
+    // Đặt lại form để tiếp tục thêm mới
     formData.value = {
       customerType: "",
       customerCode: "",
@@ -324,6 +385,7 @@ const handleSaveAndAdd = async () => {
       }
       
       toastr.error('Vui lòng kiểm tra lại thông tin nhập vào');
+      await focusFirstInvalid();
     } else if (error.response?.data?.message) {
       toastr.error(error.response.data.message);
     } else {
@@ -340,7 +402,7 @@ const generateCustomerCode = async () => {
     const response = await customerAPI.generateNewCode();
     const codeData = response.data;
     
-    // Log để debug
+    // Ghi log để kiểm tra
     console.log('Code response:', codeData);
     
     // Nếu codeData là string, dùng trực tiếp
@@ -353,10 +415,10 @@ const generateCustomerCode = async () => {
       code = codeData.data || codeData.code || codeData.customerCode || '';
     }
     
-    formData.value.customerCode = code || 'KH001'; // Fallback value
+    formData.value.customerCode = code || 'KH001'; // Giá trị dự phòng khi không nhận được mã mới
   } catch (error) {
     console.error('Lỗi khi generate mã khách hàng:', error);
-    formData.value.customerCode = 'KH001'; // Fallback
+    formData.value.customerCode = 'KH001'; // Giá trị dự phòng khi phát sinh lỗi
   }
 };
 
@@ -421,6 +483,7 @@ onMounted(() => {
                   :options="customerTypeOptions"
                   :error="validationErrors.customerType"
                   placeholder="- Chọn loại khách hàng -"
+                  ref="customerTypeRef"
                 />
               </div>
             </div>
@@ -444,6 +507,7 @@ onMounted(() => {
                   v-model="formData.customerName"
                   :required="true"
                   :error="validationErrors.customerName"
+                  ref="customerNameRef"
                 />
               </div>
             </div>
@@ -455,6 +519,7 @@ onMounted(() => {
                   v-model="formData.phone"
                   type="tel"
                   :error="validationErrors.customerPhoneNumber"
+                  ref="phoneRef"
                 />
               </div>
             </div>
@@ -466,6 +531,7 @@ onMounted(() => {
                   v-model="formData.email"
                   type="email"
                   :error="validationErrors.customerEmail"
+                  ref="emailRef"
                 />
               </div>
             </div>
@@ -479,6 +545,7 @@ onMounted(() => {
                 <MsInput
                   v-model="formData.taxCode"
                   :error="validationErrors.customerTaxCode"
+                  ref="taxCodeRef"
                 />
               </div>
             </div>
@@ -489,6 +556,7 @@ onMounted(() => {
                 <MsInput
                   v-model="formData.shippingAddress"
                   :error="validationErrors.customerShippingAddress"
+                  ref="shippingAddressRef"
                 />
               </div>
             </div>

@@ -13,7 +13,7 @@ const router = useRouter();
 // Trạng thái hiển thị popup upload
 const showUploadPopup = ref(false);
 
-// Trigger để yêu cầu reload danh sách sau khi import
+// Cờ dùng để yêu cầu tải lại danh sách sau khi import
 const refreshKey = ref(0);
 
 // Trạng thái chọn bản ghi để hiển thị các nút hành động
@@ -31,12 +31,12 @@ const isExportingCsv = ref(false);
 const searchKeyword = ref("");
 let searchTimeout;
 
-// Watch searchKeyword để gọi API với debounce
+// Theo dõi searchKeyword để gọi API với trì hoãn
 watch(searchKeyword, (newValue) => {
-  // Clear timeout trước đó
+  // Xóa timeout trước đó
   clearTimeout(searchTimeout);
 
-  // Đặt timeout để gọi API sau 300ms không gõ
+  // Đặt timeout để gọi API sau 300ms không nhập
   searchTimeout = setTimeout(() => {
     // API sẽ tự động gọi thông qua watch ở CustomerLayOut
     // vì searchKeyword là prop được truyền sang
@@ -66,7 +66,7 @@ async function handleDeleteMultiple() {
     isDeletingMany.value = true;
     await customerAPI.deleteMany(selectedIds.value);
     toastr.success("Đã xóa khách hàng đã chọn thành công");
-    refreshKey.value += 1; // reload danh sách
+    refreshKey.value += 1; // Tải lại danh sách
   } catch (error) {
     console.error("Lỗi khi xóa nhiều khách hàng:", error);
     const message =

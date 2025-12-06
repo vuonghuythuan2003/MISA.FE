@@ -14,7 +14,7 @@ import MsPagination from "@/components/ms-paginatuion/MsPagination.vue";
 import MsButton from "@/components/ms-button/MsButton.vue";
 import customerAPI from "@/apis/components/CustomerAPI.js";
 
-// Định dạng ngày (chuỗi ISO) về dd/mm/yyyy, fallback sang giá trị gốc nếu parse không được
+// Helper
 const formatDate = (value) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -22,14 +22,15 @@ const formatDate = (value) => {
   return date.toLocaleDateString("vi-VN");
 };
 
+// Router
 const router = useRouter();
 const route = useRoute();
 
-// Props từ MainContentLayout
+// Props & emits
 const props = defineProps({
   searchKeyword: {
     type: String,
-    default: ''
+    default: "",
   },
   refreshKey: {
     type: Number,
@@ -37,59 +38,29 @@ const props = defineProps({
   },
 });
 
-// Emit selection changes to parent (MainContentLayout)
-const emit = defineEmits(['selection-change']);
+const emit = defineEmits(["selection-change"]);
 
-let searchTimeout;
-
-// Watch searchKeyword từ prop để gọi API khi thay đổi (với debounce)
-watch(() => props.searchKeyword, (newValue) => {
-  // Update searchKeyword local state
-  searchKeyword.value = newValue;
-  
-  // Clear timeout trước đó
-  clearTimeout(searchTimeout);
-  
-  // Đặt timeout để gọi API sau 300ms không gõ
-  searchTimeout = setTimeout(() => {
-    currentPage.value = 1;
-    fetchCustomers();
-  }, 300);
-});
-
-// Khi refreshKey thay đổi (import CSV xong), refetch danh sách
-watch(() => props.refreshKey, () => {
-  fetchCustomers();
-});
-
-// Dữ liệu phân trang
+// State
 const currentPage = ref(1);
 const totalPages = ref(0);
 const pageSize = ref(100);
 const totalRecords = ref(0);
 const totalDebt = ref(0);
 const isLoading = ref(false);
-const errorMessage = ref('');
+const errorMessage = ref("");
 
-// Dòng đang được di chuột vào
 const hoveredRowId = ref(null);
-
-// Header đang được di chuột vào
 const hoveredHeaderKey = ref(null);
 
-// Sắp xếp
-const sortColumn = ref('customerCode');
-const sortDirection = ref('desc');
+const sortColumn = ref("customerCode");
+const sortDirection = ref("desc");
 
-// Tìm kiếm & Lọc
-const searchKeyword = ref('');
-const filterCustomerName = ref('');
-const filterCustomerEmail = ref('');
-const filterCustomerPhoneNumber = ref('');
+const searchKeyword = ref("");
+const filterCustomerName = ref("");
+const filterCustomerEmail = ref("");
+const filterCustomerPhoneNumber = ref("");
 
-// Danh sách khách hàng từ API
 const customers = ref([]);
-
 const headers = [
   { key: "customerType", label: "Loại khách hàng", width: "165px" },
   { key: "customerCode", label: "Mã khách hàng ", width: "250px" },
@@ -103,167 +74,138 @@ const headers = [
   { key: "purchasedItemName", label: "Tên hàng hóa đã mua", width: "197px" },
 ];
 
-// Biến lưu trữ các ID khách hàng được chọn và danh sách bản ghi đã chọn
 const selectedIds = ref(new Set());
 const selectedItems = ref([]);
 
+// Computed
+const isAllSelected = computed(
+  () => customers.value.length > 0 && selectedIds.value.size === customers.value.length
+);
+
+// Selection handlers
 const emitSelection = () => {
   const idsArray = Array.from(selectedIds.value);
   selectedItems.value = customers.value.filter((c) => selectedIds.value.has(c.customerId));
-  emit('selection-change', { ids: idsArray, items: selectedItems.value });
+  emit("selection-change", { ids: idsArray, items: selectedItems.value });
 };
 
-// Kiểm tra tất cả đã được chọn chưa
-const isAllSelected = computed(() => {
-  return customers.value.length > 0 && selectedIds.value.size === customers.value.length;
-});
-
-// Bật/tắt chọn một khách hàng
 const toggleSelect = (id) => {
   if (selectedIds.value.has(id)) {
     selectedIds.value.delete(id);
   } else {
     selectedIds.value.add(id);
   }
-  // Kích hoạt cập nhật giao diện
   selectedIds.value = new Set(selectedIds.value);
   emitSelection();
 };
 
-// Bật/tắt chọn tất cả khách hàng
 const toggleSelectAll = () => {
   if (isAllSelected.value) {
     selectedIds.value = new Set();
   } else {
-    selectedIds.value = new Set(customers.value.map(c => c.customerId));
+    selectedIds.value = new Set(customers.value.map((c) => c.customerId));
   }
   emitSelection();
 };
 
-/**
- * Gọi API lấy danh sách khách hàng phân trang
- */
+// Data fetcher
 const fetchCustomers = async () => {
   try {
     isLoading.value = true;
     const params = {
       pageNumber: currentPage.value,
-      pageSize: pageSize.value
+      pageSize: pageSize.value,
     };
-    
-    // Thêm tham số sắp xếp nếu có
+
     if (sortColumn.value) {
       params.sortColumn = sortColumn.value;
       params.sortDirection = sortDirection.value;
     }
-    
-    // Thêm tham số tìm kiếm & lọc
-    // keyword sẽ tìm kiếm trên tất cả string fields: tên khách hàng, email, số điện thoại, mã
+
     if (searchKeyword.value.trim()) {
       params.keyword = searchKeyword.value.trim();
     }
-    // Nếu có filter riêng từ các input khác, có thể thêm vào đây
-    // if (filterCustomerName.value.trim()) {
-    //   params.customerName = filterCustomerName.value.trim();
-    // }
     if (filterCustomerEmail.value.trim()) {
       params.customerEmail = filterCustomerEmail.value.trim();
     }
     if (filterCustomerPhoneNumber.value.trim()) {
       params.customerPhoneNumber = filterCustomerPhoneNumber.value.trim();
     }
-    
+
     const response = await customerAPI.getPaging(params);
 
-    console.log('API Response:', response);
-    console.log('Response Data:', response.data);
-
-    // Response format: { data: [...], meta: { page, pageSize, total, ... }, error: null }
     if (response.data && response.data.data) {
-      // Map dữ liệu từ API sang format của component
-      customers.value = response.data.data.map(customer => ({
+      customers.value = response.data.data.map((customer) => ({
         id: customer.customerId,
         customerId: customer.customerId,
-        type: customer.customerType || '-',
+        type: customer.customerType || "-",
         code: customer.customerCode,
         name: customer.customerName,
-        email: customer.customerEmail || '-',
-        phone: customer.customerPhoneNumber || '-',
-        taxCode: customer.customerTaxCode || '-',
-        address: customer.customerShippingAddress || '-',
-        shippingAddress: customer.customerShippingAddress || '-',
+        email: customer.customerEmail || "-",
+        phone: customer.customerPhoneNumber || "-",
+        taxCode: customer.customerTaxCode || "-",
+        address: customer.customerShippingAddress || "-",
+        shippingAddress: customer.customerShippingAddress || "-",
         lastDate: formatDate(customer.lastPurchaseDate),
-        goodsCode: customer.purchasedItemCode || '-',
-        goodsName: customer.purchasedItemName || '-'
+        goodsCode: customer.purchasedItemCode || "-",
+        goodsName: customer.purchasedItemName || "-",
       }));
 
-      // Lấy thông tin phân trang từ meta
       if (response.data.meta) {
         currentPage.value = response.data.meta.page || 1;
         pageSize.value = response.data.meta.pageSize || 10;
         totalRecords.value = response.data.meta.total || 0;
         totalPages.value = response.data.meta.totalPages || 0;
       }
-      
-      console.log('Customers:', customers.value);
-      console.log('Total Records:', totalRecords.value);
     }
   } catch (error) {
-    console.error('Lỗi khi gọi API lấy danh sách khách hàng:', error);
-    errorMessage.value = 'Lỗi khi tải danh sách khách hàng';
+    console.error("Lỗi khi gọi API lấy danh sách khách hàng:", error);
+    errorMessage.value = "Lỗi khi tải danh sách khách hàng";
   } finally {
     isLoading.value = false;
-    // Reset selection after data refresh
     selectedIds.value = new Set();
     selectedItems.value = [];
     emitSelection();
   }
 };
 
-// Xử lý tìm kiếm & lọc
+// UI handlers
 const handleSearch = () => {
-  currentPage.value = 1; // Reset về trang 1
-  fetchCustomers();
-};
-
-// Reset tìm kiếm & lọc
-const handleClearSearch = () => {
-  searchKeyword.value = '';
-  filterCustomerName.value = '';
-  filterCustomerEmail.value = '';
-  filterCustomerPhoneNumber.value = '';
   currentPage.value = 1;
   fetchCustomers();
 };
 
-// Xử lý sắp xếp
-const handleSort = (columnKey) => {
-  if (sortColumn.value === columnKey) {
-    // Nếu click vào cột đang sắp xếp, đảo chiều sắp xếp
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    // Nếu click vào cột khác, bắt đầu sắp xếp theo cột mới với chiều tăng
-    sortColumn.value = columnKey;
-    sortDirection.value = 'asc';
-  }
-  currentPage.value = 1; // Reset về trang 1
+const handleClearSearch = () => {
+  searchKeyword.value = "";
+  filterCustomerName.value = "";
+  filterCustomerEmail.value = "";
+  filterCustomerPhoneNumber.value = "";
+  currentPage.value = 1;
   fetchCustomers();
 };
 
-// Xử lý thay đổi trang
+const handleSort = (columnKey) => {
+  if (sortColumn.value === columnKey) {
+    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+  } else {
+    sortColumn.value = columnKey;
+    sortDirection.value = "asc";
+  }
+  currentPage.value = 1;
+  fetchCustomers();
+};
+
 const handlePageChange = (page) => {
   currentPage.value = page;
   fetchCustomers();
 };
 
-// Xử lý thay đổi số bản ghi trên trang
 const handlePageSizeChange = (size) => {
   pageSize.value = size;
   currentPage.value = 1;
   fetchCustomers();
 };
 
-// Xử lý xóa khách hàng
 const handleDelete = async (customer) => {
   if (confirm(`Bạn có chắc muốn xóa khách hàng "${customer.name}"?`)) {
     try {
@@ -272,52 +214,67 @@ const handleDelete = async (customer) => {
       toastr.success(`Đã xóa khách hàng "${customer.name}" thành công`);
       fetchCustomers();
     } catch (error) {
-      console.error('Lỗi khi xóa khách hàng:', error);
-      toastr.error('Lỗi khi xóa khách hàng');
-      errorMessage.value = 'Lỗi khi xóa khách hàng';
+      console.error("Lỗi khi xóa khách hàng:", error);
+      toastr.error("Lỗi khi xóa khách hàng");
+      errorMessage.value = "Lỗi khi xóa khách hàng";
     } finally {
       isLoading.value = false;
     }
   }
 };
 
-// Xử lý double click để sửa khách hàng
 const handleEditCustomer = async (customer) => {
   try {
     isLoading.value = true;
-    // Gọi API lấy chi tiết khách hàng
     const response = await customerAPI.getById(customer.customerId);
-    console.log('Customer details:', response.data);
-    // Điều hướng tới trang sửa với ID khách hàng
+    console.log("Customer details:", response.data);
     router.push(`/customer/edit/${customer.customerId}`);
   } catch (error) {
-    console.error('Lỗi khi lấy chi tiết khách hàng:', error);
-    toastr.error('Không thể tải chi tiết khách hàng');
+    console.error("Lỗi khi lấy chi tiết khách hàng:", error);
+    toastr.error("Không thể tải chi tiết khách hàng");
   } finally {
     isLoading.value = false;
   }
 };
 
-// Tải dữ liệu khi component mount
-onMounted(() => {
-  // Kiểm tra query parameters từ redirect sau khi thêm khách hàng
-  if (route.query.sortBy) {
-    sortColumn.value = route.query.sortBy;
-    sortDirection.value = route.query.order || 'desc';
-  }
-  fetchCustomers();
-});
+// Watchers
+let searchTimeout;
 
-// Watch route để refresh khi quay lại từ trang add/edit
-watch(() => route.fullPath, (newPath, oldPath) => {
-  // Nếu đang ở trang customer và có thay đổi route (từ add/edit quay về)
-  if (route.path === '/customer' && oldPath && oldPath !== newPath) {
-    // Reset về trang 1 và sắp xếp theo ID mới nhất
-    currentPage.value = 1;
-    sortColumn.value = 'customerCode';
-    sortDirection.value = 'desc';
+watch(
+  () => props.searchKeyword,
+  (newValue) => {
+    searchKeyword.value = newValue;
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      currentPage.value = 1;
+      fetchCustomers();
+    }, 300);
+  }
+);
+
+watch(
+  () => props.refreshKey,
+  () => {
     fetchCustomers();
   }
+);
+
+watch(() => route.fullPath, (newPath, oldPath) => {
+  if (route.path === "/customer" && oldPath && oldPath !== newPath) {
+    currentPage.value = 1;
+    sortColumn.value = "customerCode";
+    sortDirection.value = "desc";
+    fetchCustomers();
+  }
+});
+
+// Lifecycle
+onMounted(() => {
+  if (route.query.sortBy) {
+    sortColumn.value = route.query.sortBy;
+    sortDirection.value = route.query.order || "desc";
+  }
+  fetchCustomers();
 });
 </script>
 
