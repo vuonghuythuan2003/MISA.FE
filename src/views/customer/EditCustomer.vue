@@ -227,7 +227,19 @@ const handleSave = async () => {
     router.push({ path: '/customer', query: { sortBy: 'customerCode', order: 'desc' } });
   } catch (error) {
     console.error('Lỗi khi cập nhật khách hàng:', error);
-    if (error.response?.data?.errors) {
+    // Bắt lỗi DuplicateEmail/DuplicatePhoneNumber từ backend
+    const errorObj = error.response?.data?.error;
+    const errorCode = errorObj?.code || error.response?.data?.errorCode;
+    const errorMessage = errorObj?.message || error.response?.data?.message;
+    if (errorCode === '4001') {
+      validationErrors.value.customerEmail = errorMessage || 'Email đã tồn tại trong hệ thống';
+      await focusFirstInvalid();
+      toastr.error(validationErrors.value.customerEmail);
+    } else if (errorCode === '4002') {
+      validationErrors.value.customerPhoneNumber = errorMessage || 'Số điện thoại đã tồn tại trong hệ thống';
+      await focusFirstInvalid();
+      toastr.error(validationErrors.value.customerPhoneNumber);
+    } else if (error.response?.data?.errors) {
       const errors = error.response.data.errors;
       const fieldMapping = {
         'CustomerType': 'customerType',
@@ -242,19 +254,17 @@ const handleSave = async () => {
         'PurchasedItemCode': 'purchasedItemCode',
         'PurchasedItemName': 'purchasedItemName',
       };
-
       for (const [field, messages] of Object.entries(errors)) {
-        const errorMessage = Array.isArray(messages) ? messages[0] : messages;
+        const msg = Array.isArray(messages) ? messages[0] : messages;
         const frontendField = fieldMapping[field] || field.charAt(0).toLowerCase() + field.slice(1);
-
         if (validationErrors.value.hasOwnProperty(frontendField)) {
-          validationErrors.value[frontendField] = errorMessage;
+          validationErrors.value[frontendField] = msg;
         }
       }
       await focusFirstInvalid();
       toastr.error('Vui lòng kiểm tra lại thông tin nhập vào');
-    } else if (error.response?.data?.message) {
-      toastr.error(error.response.data.message);
+    } else if (errorMessage) {
+      toastr.error(errorMessage);
     } else {
       toastr.error('Không thể cập nhật khách hàng. Vui lòng kiểm tra lại thông tin.');
     }
@@ -334,6 +344,7 @@ onMounted(() => {
                   v-model="formData.customerCode"
                   placeholder="Mã tự sinh"
                   :error="validationErrors.customerCode"
+                  :readonly="true"
                 />
               </div>
             </div>

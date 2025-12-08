@@ -228,16 +228,11 @@ const handleSave = async () => {
 
   try {
     isLoading.value = true;
-    
     // Tạo FormData để gửi lên backend (bao gồm cả file ảnh nếu có)
     const formDataWithFile = new FormData();
-    
-    // Thêm file ảnh nếu có
     if (avatarFile.value) {
       formDataWithFile.append('file', avatarFile.value);
     }
-    
-    // Thêm các trường dữ liệu
     formDataWithFile.append('customerType', formData.value.customerType);
     formDataWithFile.append('customerCode', formData.value.customerCode);
     formDataWithFile.append('customerName', formData.value.customerName);
@@ -254,17 +249,25 @@ const handleSave = async () => {
 
     // Gọi API (backend sẽ tự xử lý validation, parse date, upload ảnh)
     const response = await customerAPI.createWithAvatar(formDataWithFile);
-    
     toastr.success(`Đã thêm khách hàng "${formData.value.customerName}" thành công`);
     router.push({ path: '/customer', query: { sortBy: 'customerCode', order: 'desc' } });
   } catch (error) {
-    console.error('Lỗi khi thêm khách hàng:', error);    
-    // Hiển thị lỗi từ backend dưới các ô input
-    if (error.response?.data?.errors) {
+    console.error('Lỗi khi thêm khách hàng:', error);
+    // Xử lý lỗi DuplicateEmail/DuplicatePhoneNumber
+    // Fix: lấy error từ error.error.code và error.error.message nếu có
+    const errorObj = error.response?.data?.error;
+    const errorCode = errorObj?.code || error.response?.data?.errorCode;
+    const errorMessage = errorObj?.message || error.response?.data?.message;
+    if (errorCode === '4001') {
+      validationErrors.value.customerEmail = errorMessage || 'Email đã tồn tại trong hệ thống';
+      await focusFirstInvalid();
+      toastr.error(validationErrors.value.customerEmail);
+    } else if (errorCode === '4002') {
+      validationErrors.value.customerPhoneNumber = errorMessage || 'Số điện thoại đã tồn tại trong hệ thống';
+      await focusFirstInvalid();
+      toastr.error(validationErrors.value.customerPhoneNumber);
+    } else if (error.response?.data?.errors) {
       const errors = error.response.data.errors;
-      console.log('Errors từ backend:', errors);
-      
-      // Map field name từ backend sang frontend state
       const fieldMapping = {
         'CustomerType': 'customerType',
         'CustomerCode': 'customerCode',
@@ -277,25 +280,17 @@ const handleSave = async () => {
         'PurchasedItemCode': 'purchasedItemCode',
         'PurchasedItemName': 'purchasedItemName',
       };
-      
       for (const [field, messages] of Object.entries(errors)) {
-        const errorMessage = Array.isArray(messages) ? messages[0] : messages;
+        const msg = Array.isArray(messages) ? messages[0] : messages;
         const frontendField = fieldMapping[field] || field.charAt(0).toLowerCase() + field.slice(1);
-        
-        console.log(`Setting ${frontendField} = ${errorMessage}`);
-        
         if (validationErrors.value.hasOwnProperty(frontendField)) {
-          validationErrors.value[frontendField] = errorMessage;
-        } else {
-          console.warn(`Field ${frontendField} không tồn tại trong validationErrors`);
+          validationErrors.value[frontendField] = msg;
         }
       }
-      
-      console.log('validationErrors sau khi set:', validationErrors.value);
       toastr.error('Vui lòng kiểm tra lại thông tin nhập vào');
       await focusFirstInvalid();
-    } else if (error.response?.data?.message) {
-      toastr.error(error.response.data.message);
+    } else if (errorMessage) {
+      toastr.error(errorMessage);
     } else {
       toastr.error('Không thể thêm khách hàng. Vui lòng kiểm tra lại thông tin.');
     }
@@ -324,16 +319,10 @@ const handleSaveAndAdd = async () => {
 
   try {
     isLoading.value = true;
-    
-    // Tạo FormData để gửi lên backend (bao gồm cả file ảnh nếu có)
     const formDataWithFile = new FormData();
-    
-    // Thêm file ảnh nếu có
     if (avatarFile.value) {
       formDataWithFile.append('file', avatarFile.value);
     }
-    
-    // Thêm các trường dữ liệu
     formDataWithFile.append('customerType', formData.value.customerType);
     formDataWithFile.append('customerCode', formData.value.customerCode);
     formDataWithFile.append('customerName', formData.value.customerName);
@@ -348,12 +337,8 @@ const handleSaveAndAdd = async () => {
     formDataWithFile.append('purchasedItemCode', formData.value.purchasedGoods);
     formDataWithFile.append('purchasedItemName', formData.value.purchasedGoodsName);
 
-    // Gọi API (backend sẽ tự xử lý validation, parse date, upload ảnh)
     const response = await customerAPI.createWithAvatar(formDataWithFile);
-    
     toastr.success(`Đã thêm khách hàng "${formData.value.customerName}" thành công`);
-    
-    // Đặt lại form để tiếp tục thêm mới
     formData.value = {
       customerType: "",
       customerCode: "",
@@ -368,17 +353,21 @@ const handleSaveAndAdd = async () => {
     };
     avatarFile.value = null;
     avatarPreview.value = null;
-    
-    // Gọi API sinh mã mới cho khách hàng tiếp theo
     generateCustomerCode();
   } catch (error) {
     console.error('Lỗi khi thêm khách hàng:', error);
-    
-    // Hiển thị lỗi từ backend dưới các ô input
-    if (error.response?.data?.errors) {
+    const errorCode = error.response?.data?.errorCode;
+    const errorMessage = error.response?.data?.message;
+    if (errorCode === '4001') {
+      validationErrors.value.customerEmail = errorMessage || 'Email đã tồn tại trong hệ thống';
+      await focusFirstInvalid();
+      toastr.error(validationErrors.value.customerEmail);
+    } else if (errorCode === '4002') {
+      validationErrors.value.customerPhoneNumber = errorMessage || 'Số điện thoại đã tồn tại trong hệ thống';
+      await focusFirstInvalid();
+      toastr.error(validationErrors.value.customerPhoneNumber);
+    } else if (error.response?.data?.errors) {
       const errors = error.response.data.errors;
-      
-      // Map field name từ backend sang frontend state
       const fieldMapping = {
         'CustomerType': 'customerType',
         'CustomerCode': 'customerCode',
@@ -391,20 +380,17 @@ const handleSaveAndAdd = async () => {
         'PurchasedItemCode': 'purchasedItemCode',
         'PurchasedItemName': 'purchasedItemName',
       };
-      
       for (const [field, messages] of Object.entries(errors)) {
-        const errorMessage = Array.isArray(messages) ? messages[0] : messages;
+        const msg = Array.isArray(messages) ? messages[0] : messages;
         const frontendField = fieldMapping[field] || field.charAt(0).toLowerCase() + field.slice(1);
-        
         if (validationErrors.value.hasOwnProperty(frontendField)) {
-          validationErrors.value[frontendField] = errorMessage;
+          validationErrors.value[frontendField] = msg;
         }
       }
-      
       toastr.error('Vui lòng kiểm tra lại thông tin nhập vào');
       await focusFirstInvalid();
-    } else if (error.response?.data?.message) {
-      toastr.error(error.response.data.message);
+    } else if (errorMessage) {
+      toastr.error(errorMessage);
     } else {
       toastr.error('Không thể thêm khách hàng. Vui lòng kiểm tra lại thông tin.');
     }
