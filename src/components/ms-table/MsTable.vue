@@ -1,7 +1,7 @@
 <template>
   <div class="ms-table-container">
     <table class="ms-table">
-      <thead>
+      <thead @mouseleave="hoveredHeaderKey = null">
         <tr>
           <!-- Checkbox column -->
           <th class="th-checkbox">
@@ -24,17 +24,14 @@
           >
             <div class="header-content">
               <span>{{ header.label }}</span>
-              <svg
-                v-if="hoveredHeaderKey === header.key || sortColumn === header.key"
+              <SortAscendingOutlined
+                v-if="hoveredHeaderKey === header.key"
                 class="sort-icon"
                 :style="{
                   transform: sortColumn === header.key && sortDirection === 'desc' ? 'rotate(180deg)' : 'rotate(0deg)',
                   color: sortColumn === header.key ? '#1890ff' : '#7c869c'
                 }"
-                width="14" height="14" viewBox="0 0 16 16"
-              >
-                <path d="M4 6h8l-4 4z" fill="currentColor" />
-              </svg>
+              />
             </div>
           </th>
         </tr>
@@ -73,6 +70,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { SortAscendingOutlined } from '@ant-design/icons-vue';
 
 const props = defineProps({
   headers: Array,

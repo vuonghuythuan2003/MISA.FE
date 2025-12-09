@@ -97,6 +97,13 @@ function goToAdd() {
   router.push("/customer/add");
 }
 
+// Điều hướng sang trang sửa
+function goToEdit() {
+  if (selectedIds.value.length > 0) {
+    router.push(`/customer/${selectedIds.value[0]}`);
+  }
+}
+
 // Xử lý xóa nhiều khách hàng
 async function handleDeleteMultiple() {
   if (!selectedIds.value.length || isDeletingMany.value) return;
@@ -278,7 +285,7 @@ onUnmounted(() => {
         </div>
         <!-- Nhóm hành động -->
         <div class="action-group flex-row align-center">
-          <span class="action-text">Sửa</span>
+          <span class="action-text" @click="goToEdit" style="cursor:pointer" v-show="hasSelection">Sửa</span>
           <span class="icon-default icon-reload"></span>
         </div>
         <!-- Nút Xóa -->

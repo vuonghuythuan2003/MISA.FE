@@ -18,6 +18,13 @@ class CustomerAPI extends BaseAPI {
         return api.get(`/${this.controller}/NewCode`);
     }
 
+    // Header dùng chung cho các API upload file
+    get multipartHeaders() {
+        return {
+            'Content-Type': 'multipart/form-data'
+        };
+    }
+
     /**
      * Nhập khách hàng từ file CSV
      * @param {File} file - File CSV
@@ -27,9 +34,7 @@ class CustomerAPI extends BaseAPI {
         const formData = new FormData();
         formData.append('file', file);
         return api.post(`/${this.controller}/import`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
+            headers: this.multipartHeaders
         });
     }
 
@@ -52,9 +57,7 @@ class CustomerAPI extends BaseAPI {
      */
     createWithAvatar(formData) {
         return api.post(`/${this.controller}/with-avatar`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
+            headers: this.multipartHeaders
         });
     }
 
@@ -66,9 +69,7 @@ class CustomerAPI extends BaseAPI {
      */
     updateWithAvatar(id, formData) {
         return api.put(`/${this.controller}/${id}/with-avatar`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
+            headers: this.multipartHeaders
         });
     }
 

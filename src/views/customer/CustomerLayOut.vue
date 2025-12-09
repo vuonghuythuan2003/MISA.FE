@@ -234,7 +234,7 @@ const handleEditCustomer = async (customer) => {
     isLoading.value = true;
     const response = await customerAPI.getById(customer.customerId);
     console.log("Customer details:", response.data);
-    router.push(`/customer/edit/${customer.customerId}`);
+    router.push(`/customer/${customer.customerId}`);
   } catch (error) {
     console.error("Lỗi khi lấy chi tiết khách hàng:", error);
     toastr.error("Không thể tải chi tiết khách hàng");
