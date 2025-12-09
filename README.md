@@ -1,62 +1,67 @@
-# Vue 3 + Vite
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
-
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
 # MISA CRM Frontend
 
-Ứng dụng giao diện quản lý khách hàng (CRM) sử dụng Vue 3 + Vite.
+Đây là dự án frontend của hệ thống MISA CRM, sử dụng Vue 3, Vite và Ant Design Vue.
+
+## Cấu trúc thư mục
+
+- `src/` - Mã nguồn chính
+  - `components/` - Các component dùng chung (MsTable, MsButton, MsUpload, ...)
+  - `views/` - Các trang chính (customer, opportunity, ...)
+  - `apis/` - Giao tiếp API backend
+  - `assets/` - Ảnh, style, tài nguyên tĩnh
+  - `layouts/` - Layout tổng thể
+  - `router/` - Định tuyến trang
+  - `utils/` - Hàm tiện ích
+- `public/` - File tĩnh, favicon
+- `index.html` - File HTML gốc
+- `vite.config.js` - Cấu hình Vite
+- `package.json` - Thông tin package, scripts
+
+## Cài đặt
+
+```bash
+npm install
+```
+
+## Chạy dự án
+
+```bash
+npm run dev
+```
+
+## Build production
+
+```bash
+npm run build
+```
+
+## Một số lệnh khác
+
+- `npm run lint` - Kiểm tra code style
+- `npm run preview` - Xem thử bản build
 
 ## Tính năng chính
 
-- Quản lý khách hàng: thêm, sửa, xóa, xem chi tiết
-- Tìm kiếm, lọc, phân trang danh sách khách hàng
-- Import/Export dữ liệu khách hàng qua file CSV
-- Thông báo toast, xác nhận thao tác
-- Giao diện responsive, dễ sử dụng
+- Quản lý khách hàng, cơ hội
+- Import/Export file Excel
+- Phân trang, tìm kiếm, lọc, sắp xếp
+- Thông báo realtime (toastr)
+- Giao diện hiện đại, responsive
 
 ## Công nghệ sử dụng
 
 - [Vue 3](https://vuejs.org/)
 - [Vite](https://vitejs.dev/)
+- [Ant Design Vue](https://www.antdv.com/)
 - [Axios](https://axios-http.com/) (gọi API)
 - [Pinia](https://pinia.vuejs.org/) (quản lý state)
 - [Sass/CSS3] (style)
 
-## Cài đặt & chạy
+## Liên hệ
 
-1. Cài Node.js >= 16
-2. Cài dependencies:
-	```bash
-	npm install
-	```
-3. Chạy dev:
-	```bash
-	npm run dev
-	```
-4. Build production:
-	```bash
-	npm run build
-	```
-
-## Cấu trúc thư mục
-
-```
-MISA_CRM_DEVELOPMENT/
-├── public/                # Tài nguyên tĩnh
-├── src/
-│   ├── apis/              # Gọi API backend
-│   ├── assets/            # Ảnh, style
-│   ├── components/        # Component dùng lại (button, input, toast...)
-│   ├── layouts/           # Layout chính
-│   ├── router/            # Định tuyến
-│   ├── utils/             # Hàm tiện ích
-│   ├── views/             # Trang nghiệp vụ (customer, opportunity...)
-│   └── App.vue, main.js   # Entry point
-├── index.html
-├── package.json
-└── vite.config.js
-```
+- Người phát triển : Vương Huy Thuận
+- Email: vuonghuythuan1@gmail.com
 
 ## Kết nối backend
 

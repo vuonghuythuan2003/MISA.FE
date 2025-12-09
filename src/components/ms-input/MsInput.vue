@@ -291,7 +291,6 @@ defineExpose({
 
 .ms-input__field:focus {
   border-color: #2680eb;
-  box-shadow: 0 0 0 3px rgba(38, 128, 235, 0.1);
 }
 
 .ms-input__field::placeholder {
@@ -331,7 +330,7 @@ defineExpose({
 
 .ms-input--error .ms-input__field:focus {
   border-color: #e53935;
-  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
+  /* box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1); */
 }
 
 .ms-input--disabled {

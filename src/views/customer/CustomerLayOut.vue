@@ -23,7 +23,8 @@ function handleUploaded({ successCount = 0, failCount = 0 } = {}) {
   fetchCustomers();
 }
 
-// Helper
+
+// Hàm chuyển ngày tháng sang định dạng Việt Nam
 const formatDate = (value) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -53,7 +54,7 @@ const props = defineProps({
 
 const emit = defineEmits(["selection-change"]);
 
-// State
+// Biến trạng thái
 const currentPage = ref(1);
 const totalPages = ref(0);
 const pageSize = ref(100);
@@ -89,12 +90,12 @@ const headers = [
 const selectedIds = ref(new Set());
 const selectedItems = ref([]);
 
-// Computed
+// Tính toán trạng thái chọn tất cả
 const isAllSelected = computed(
   () => customers.value.length > 0 && selectedIds.value.size === customers.value.length
 );
 
-// Selection handlers
+// Xử lý chọn/deselect
 const emitSelection = () => {
   const idsArray = Array.from(selectedIds.value);
   selectedItems.value = customers.value.filter((c) => selectedIds.value.has(c.customerId));
@@ -120,7 +121,7 @@ const toggleSelectAll = () => {
   emitSelection();
 };
 
-// Data fetcher
+// Hàm lấy danh sách khách hàng
 const fetchCustomers = async () => {
   try {
     isLoading.value = true;
@@ -143,18 +144,15 @@ const fetchCustomers = async () => {
     if (filterCustomerPhoneNumber.value.trim()) {
       params.customerPhoneNumber = filterCustomerPhoneNumber.value.trim();
     }
-    // Áp dụng filter loại khách hàng
+    // Áp dụng bộ lọc loại khách hàng
     applyCustomerTypeFilter(params);
 
-// Hàm riêng cho filter loại khách hàng
+// Hàm riêng cho bộ lọc loại khách hàng
 function applyCustomerTypeFilter(params) {
   if (props.customerTypeFilter) {
     params.customerType = props.customerTypeFilter;
   }
-}
-
-    console.log('Fetch customers with params:', params); // Debug log
-    
+}    
     const response = await customerAPI.getPaging(params);
 
     if (response.data && response.data.data) {
@@ -312,7 +310,7 @@ onMounted(() => {
       >
         <!-- ...existing code... -->
 
-        <!-- Ensure selectedItems is always up to date for Delete/Export -->
+        <!-- Đảm bảo selectedItems luôn đúng để Xóa/Xuất -->
         function onSelectionChange({ ids, items }) {
           selectedItems.value = items;
         }

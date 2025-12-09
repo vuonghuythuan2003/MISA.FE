@@ -71,9 +71,6 @@ const handleClose = () => {
 // Xử lý sự kiện thay đổi file
 const handleChange = info => {
   const status = info.file.status;
-  if (status !== 'uploading') {
-    console.log(info.file, info.fileList);
-  }
   if (status === 'done') {
     message.success(`Nhập tệp ${info.file.name} thành công.`);
   } else if (status === 'error') {
@@ -85,11 +82,23 @@ const handleChange = info => {
 const handleUpload = async ({ file, onSuccess, onError }) => {
   try {
     const response = await customerAPI.importFromCsv(file);
-    // Giả sử API trả về { successCount, failCount }
-    const { successCount = 0, failCount = 0 } = response.data || {};
-    onSuccess && onSuccess({});
-    emit('uploaded', { successCount, failCount });
-    message.success(`Nhập tệp ${file.name} thành công.`);
+    // Hỗ trợ cả cấu trúc ApiResponse<Data> và trả phẳng
+    const importResult = response?.data?.data ?? response?.data ?? {};
+    const successCount = importResult.successCount ?? 0;
+    const failCount =
+      importResult.failCount ??
+      importResult.errorCount ??
+      importResult.errors?.length ??
+      0;
+    const totalRows = importResult.totalRows ?? successCount + failCount;
+
+    onSuccess && onSuccess(importResult);
+    emit('uploaded', { successCount, failCount, totalRows });
+    message.success(
+      `Nhập tệp ${file.name}: thành công ${successCount}/${totalRows} bản ghi${
+        failCount ? `, lỗi ${failCount}` : ''
+      }.`
+    );
     handleClose();
   } catch (err) {
     console.error('Upload CSV error:', err);
@@ -101,6 +110,5 @@ const handleUpload = async ({ file, onSuccess, onError }) => {
 
 // Xử lý sự kiện kéo thả file
 function handleDrop(e) {
-  console.log(e);
 }
 </script>

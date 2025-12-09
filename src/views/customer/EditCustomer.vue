@@ -236,11 +236,9 @@ const handleSave = async () => {
     if (errorCode === '4001') {
       validationErrors.value.customerEmail = errorMessage || 'Email đã tồn tại trong hệ thống';
       await focusFirstInvalid();
-      toastr.error(validationErrors.value.customerEmail);
     } else if (errorCode === '4002') {
       validationErrors.value.customerPhoneNumber = errorMessage || 'Số điện thoại đã tồn tại trong hệ thống';
       await focusFirstInvalid();
-      toastr.error(validationErrors.value.customerPhoneNumber);
     } else if (error.response?.data?.errors) {
       const errors = error.response.data.errors;
       const fieldMapping = {
@@ -326,19 +324,7 @@ onMounted(() => {
         <div class="form-grid">
           <!-- Cột trái -->
           <div class="col-left">
-            <div class="form-item flex-row align-center">
-              <label class="form-label">Loại khách hàng</label>
-              <div class="input-wrapper">
-                <MsInput
-                  v-model="formData.customerType"
-                  placeholder="- Không chọn -"
-                  readonly
-                  :error="validationErrors.customerType"
-                  ref="customerTypeRef"
-                  tabindex="1"
-                />
-              </div>
-            </div>
+            
 
             <div class="form-item flex-row align-center">
               <label class="form-label">Mã khách hàng <span class="required">*</span></label>
@@ -362,6 +348,20 @@ onMounted(() => {
                   :error="validationErrors.customerName"
                   ref="customerNameRef"
                   tabindex="3"
+                />
+              </div>
+            </div>
+
+            <div class="form-item flex-row align-center">
+              <label class="form-label">Loại khách hàng</label>
+              <div class="input-wrapper">
+                <MsInput
+                  v-model="formData.customerType"
+                  placeholder="- Không chọn -"
+                  readonly
+                  :error="validationErrors.customerType"
+                  ref="customerTypeRef"
+                  tabindex="1"
                 />
               </div>
             </div>

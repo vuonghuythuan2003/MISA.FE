@@ -32,7 +32,7 @@ const shippingAddressRef = ref(null);
 
 // Dữ liệu form
 const formData = ref({
-  customerType: customerTypeOptions[0]?.value || "", // Set default to first option
+  customerType: customerTypeOptions[0]?.value || "", 
   customerCode: "",
   customerName: "",
   taxCode: "",
@@ -48,7 +48,7 @@ const toApiDate = (value) => {
   if (!value) return null;
   if (typeof value === "string") {
     const normalized = value.trim().toLowerCase();
-    if (normalized === "" || normalized === "null") return null; // allow empty/"null" to be treated as no date
+    if (normalized === "" || normalized === "null") return null; 
   }
   if (value?.toISOString) return value.toISOString();
   const parsed = dayjs(value);
@@ -259,11 +259,11 @@ const handleSave = async () => {
     if (errorCode === '4001') {
       validationErrors.value.customerEmail = errorMessage || 'Email đã tồn tại trong hệ thống';
       await focusFirstInvalid();
-      toastr.error(validationErrors.value.customerEmail);
+      //toastr.error(validationErrors.value.customerEmail);
     } else if (errorCode === '4002') {
       validationErrors.value.customerPhoneNumber = errorMessage || 'Số điện thoại đã tồn tại trong hệ thống';
       await focusFirstInvalid();
-      toastr.error(validationErrors.value.customerPhoneNumber);
+      //toastr.error(validationErrors.value.customerPhoneNumber);
     } else if (error.response?.data?.errors) {
       const errors = error.response.data.errors;
       const fieldMapping = {
@@ -338,7 +338,7 @@ const handleSaveAndAdd = async () => {
     const response = await customerAPI.createWithAvatar(formDataWithFile);
     toastr.success(`Đã thêm khách hàng "${formData.value.customerName}" thành công`);
     formData.value = {
-      customerType: customerTypeOptions[0]?.value || "", // Set default to first option
+      customerType: customerTypeOptions[0]?.value || "", // Mặc định chọn giá trị đầu tiên
       customerCode: "",
       customerName: "",
       taxCode: "",
@@ -403,11 +403,7 @@ const generateCustomerCode = async () => {
     const response = await customerAPI.generateNewCode();
     const codeData = response.data;
     
-    // Ghi log để kiểm tra
-    console.log('Code response:', codeData);
-    
-    // Nếu codeData là string, dùng trực tiếp
-    // Nếu là object, lấy property 'data' hoặc 'code' hoặc các tên khác
+    // Xử lý dữ liệu mã trả về: có thể là string hoặc object
     let code = '';
     if (typeof codeData === 'string') {
       code = codeData;
@@ -480,20 +476,6 @@ onMounted(async () => {
           <!-- Cột trái -->
           <div class="col-left">
             <div class="form-item flex-row align-center">
-              <label class="form-label">Loại khách hàng</label>
-              <div class="input-wrapper">
-                <MsSelected
-                  v-model="formData.customerType"
-                  :options="customerTypeOptions"
-                  :error="validationErrors.customerType"
-                  placeholder="- Chọn loại khách hàng -"
-                  ref="customerTypeRef"
-                  tabindex="1"
-                />
-              </div>
-            </div>
-
-            <div class="form-item flex-row align-center">
               <label class="form-label">Mã khách hàng <span class="required">*</span></label>
               <div class="input-wrapper">
                 <MsInput
@@ -518,6 +500,22 @@ onMounted(async () => {
                 />
               </div>
             </div>
+            
+            <div class="form-item flex-row align-center">
+              <label class="form-label">Loại khách hàng</label>
+              <div class="input-wrapper">
+                <MsSelected
+                  v-model="formData.customerType"
+                  :options="customerTypeOptions"
+                  :error="validationErrors.customerType"
+                  placeholder="- Chọn loại khách hàng -"
+                  ref="customerTypeRef"
+                  tabindex="1"
+                />
+              </div>
+            </div>
+
+            
 
             <div class="form-item flex-row align-center">
               <label class="form-label">Điện thoại <span class="required">*</span></label>
@@ -660,7 +658,6 @@ onMounted(async () => {
   margin: 0;
   font-size: 13px;
   font-family: Inter, sans-serif;
-  box-shadow: none;
   font-weight: 400;
   border-radius: 0;
   color: #4262f0 !important;
@@ -840,7 +837,6 @@ onMounted(async () => {
 
 .input-wrapper :deep(.date-picker-custom .ant-picker-focused) {
   border-color: #4262f0;
-  box-shadow: 0 0 0 2px rgba(66, 98, 240, 0.1);
 }
 
 .input-wrapper :deep(.date-picker-custom .ant-picker-input > input) {
@@ -906,7 +902,6 @@ onMounted(async () => {
 .m-textarea:focus {
   outline: none;
   border-color: #4262f0;
-  box-shadow: 0 0 0 2px rgba(66, 98, 240, 0.1);
 }
 
 .m-input:hover,

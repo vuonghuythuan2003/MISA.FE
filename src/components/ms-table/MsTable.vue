@@ -91,7 +91,7 @@ const isAllSelected = computed(() => props.items && props.items.length > 0 && pr
 <style scoped>
 .ms-table-container {
   width: 100%;
-  min-height: 532px;
+  min-height: calc(100vh - 161px);
   display: flex;
   flex-direction: column;
   overflow-x: auto;
