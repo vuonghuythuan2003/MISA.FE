@@ -191,7 +191,8 @@ function handleExportCsv() {
           ].map(escapeCsv).join(","));
 
           const csvContent = [headers.join(","), ...lines].join("\n");
-          // Tạo Blob CSV (UTF-8 + tiếng Việt chuẩn) từ biến csvContent
+          // Binary Large Object
+          // Tạo file CSV (UTF-8 + tiếng Việt chuẩn) từ biến csvContent
           const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
 
           const url = window.URL.createObjectURL(blob);
@@ -233,7 +234,7 @@ function handleCustomerTypeChange(value) {
   // Nếu chọn 'Tất cả khách hàng' thì truyền null, còn lại truyền đúng mã loại
   customerTypeFilter.value = value === null ? null : value;
   showCustomerTypeDropdown.value = false;
-  refreshKey.value += 1; // Kích hoạt refresh để CustomerLayOut gọi lại API với bộ lọc mới
+  refreshKey.value += 1; // Trigger refresh để CustomerLayOut fetch lại với filter mới
 }
 
 // Toggle dropdown
@@ -405,6 +406,13 @@ onUnmounted(() => {
   </div>
 </template>
 <style scoped>
+.main-content-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
 .toolbar-left .customer-dropdown {
   position: relative;
   width: 185px;

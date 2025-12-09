@@ -91,10 +91,17 @@ const isAllSelected = computed(() => props.items && props.items.length > 0 && pr
 <style scoped>
 .ms-table-container {
   width: 100%;
-  min-height: calc(100vh - 161px);
+  /* Chiều cao bám theo vùng chứa để tránh cuộn dọc ngoài cùng */
+  height: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  /* Cho phép cuộn dọc khi danh sách dài, vẫn giữ cuộn ngang */
   overflow-x: auto;
+  overflow-y: auto;
+  padding-bottom: 8px;
   background-color: #fff;
   border-radius: 0;
   border: none;

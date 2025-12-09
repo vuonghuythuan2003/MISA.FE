@@ -310,7 +310,7 @@ onMounted(() => {
       >
         <!-- ...existing code... -->
 
-        <!-- Đảm bảo selectedItems luôn đúng để Xóa/Xuất -->
+        <!-- Ensure selectedItems is always up to date for Delete/Export -->
         function onSelectionChange({ ids, items }) {
           selectedItems.value = items;
         }
@@ -383,7 +383,7 @@ onMounted(() => {
 <style scoped>
 .customer-layout {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   background-color: #fff;
   margin-top: 1px;
   border-top: 1px solid #d3d7de;
@@ -391,12 +391,15 @@ onMounted(() => {
   padding-bottom: 56px;   
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 .table-container {
   width: 100%;
-  max-height: calc(100vh - 164px); 
+  flex: 1;
+  min-height: 0;
   overflow: auto;
-  flex:1;
+  display: flex;
+  flex-direction: column;
 }
 table {
   width: 100%;
