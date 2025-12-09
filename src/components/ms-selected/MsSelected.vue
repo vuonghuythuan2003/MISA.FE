@@ -10,6 +10,7 @@
         :options="options"
         :filter-option="filterOption"
         :get-popup-container="(trigger) => trigger.parentElement"
+        :tabindex="tabindex"
         @focus="handleFocus"
         @blur="handleBlur"
         @change="handleChange"
@@ -50,6 +51,10 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  tabindex: {
+    type: [String, Number],
+    default: undefined,
+  },
 });
 
 const emit = defineEmits(["update:modelValue", "focus", "blur", "buttonClick"]);
@@ -87,7 +92,7 @@ const filterOption = (input, option) => {
 }
 
 .ms-selected--error .custom-select :deep(.ant-select-selector) {
-  border-color: #faad14 !important;
+  border-color: #e53935 !important;
 }
 
 .ms-selected-wrapper .flex-1 :deep(.ant-select-selector) {
@@ -96,7 +101,7 @@ const filterOption = (input, option) => {
 }
 
 .ms-selected__error {
-  color: #faad14;
+  color: #e53935;
   font-size: 12px;
   margin-top: 4px;
   line-height: 1.5;

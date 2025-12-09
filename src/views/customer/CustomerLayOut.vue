@@ -6,14 +6,22 @@ import {
   VerticalRightOutlined,
   RightOutlined,
   VerticalLeftOutlined,
-  DeleteOutlined,
   SortAscendingOutlined,
 } from "@ant-design/icons-vue";
 import toastr from "toastr";
 import MsPagination from "@/components/ms-paginatuion/MsPagination.vue";
 import MsButton from "@/components/ms-button/MsButton.vue";
+import MsUpload from "@/components/ms-upload/MsUpload.vue";
+import MsTable from "@/components/ms-table/MsTable.vue";
 import customerAPI from "@/apis/components/CustomerAPI.js";
-import { Modal } from "ant-design-vue";
+// Trạng thái popup nhập Excel
+const showUpload = ref(false);
+
+// Xử lý sự kiện nhập Excel thành công/thất bại
+function handleUploaded({ successCount = 0, failCount = 0 } = {}) {
+  toastr.success(`Nhập thành công ${successCount} khách hàng, thất bại ${failCount} khách hàng.`);
+  fetchCustomers();
+}
 
 // Helper
 const formatDate = (value) => {
@@ -33,6 +41,10 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  customerTypeFilter: {
+    type: String,
+    default: null,
+  },
   refreshKey: {
     type: Number,
     default: 0,
@@ -50,7 +62,6 @@ const totalDebt = ref(0);
 const isLoading = ref(false);
 const errorMessage = ref("");
 
-const hoveredRowId = ref(null);
 const hoveredHeaderKey = ref(null);
 
 const sortColumn = ref("customerCode");
@@ -67,7 +78,7 @@ const headers = [
   { key: "customerCode", label: "Mã khách hàng ", width: "250px" },
   { key: "customerName", label: "Tên khách hàng", width: "300px" },
   { key: "customerTaxCode", label: "Mã số thuế", width: "180px" },
-  { key: "customerShippingAddress", label: "Địa chỉ (Giao hàng)", width: "200px" },
+  { key: "customerShippingAddress", label: "Địa chỉ (Giao hàng)", width: "250px" },
   { key: "customerPhoneNumber", label: "Điện thoại", width: "200px" },
   { key: "customerEmail", label: "Email", width: "210px" },
   { key: "lastPurchaseDate", label: "Ngày mua hàng gần nhất", width: "217px" },
@@ -132,7 +143,18 @@ const fetchCustomers = async () => {
     if (filterCustomerPhoneNumber.value.trim()) {
       params.customerPhoneNumber = filterCustomerPhoneNumber.value.trim();
     }
+    // Áp dụng filter loại khách hàng
+    applyCustomerTypeFilter(params);
 
+// Hàm riêng cho filter loại khách hàng
+function applyCustomerTypeFilter(params) {
+  if (props.customerTypeFilter) {
+    params.customerType = props.customerTypeFilter;
+  }
+}
+
+    console.log('Fetch customers with params:', params); // Debug log
+    
     const response = await customerAPI.getPaging(params);
 
     if (response.data && response.data.data) {
@@ -207,33 +229,6 @@ const handlePageSizeChange = (size) => {
   fetchCustomers();
 };
 
-const handleDelete = (customer) => {
-  Modal.confirm({
-    title: "Xác nhận xóa",
-    content: `Bạn có chắc muốn xóa khách hàng "${customer.name}"?`,
-    centered: true,
-    okText: "Xóa",
-    okType: "danger",
-    cancelText: "Hủy",
-    autoFocusButton: "cancel",
-    onOk: () =>
-      (async () => {
-        try {
-          isLoading.value = true;
-          await customerAPI.delete(customer.customerId);
-          toastr.success(`Đã xóa khách hàng "${customer.name}" thành công`);
-          fetchCustomers();
-        } catch (error) {
-          console.error("Lỗi khi xóa khách hàng:", error);
-          toastr.error("Lỗi khi xóa khách hàng");
-          errorMessage.value = "Lỗi khi xóa khách hàng";
-        } finally {
-          isLoading.value = false;
-        }
-      })(),
-  });
-};
-
 const handleEditCustomer = async (customer) => {
   try {
     isLoading.value = true;
@@ -260,6 +255,14 @@ watch(
       currentPage.value = 1;
       fetchCustomers();
     }, 300);
+  }
+);
+
+watch(
+  () => props.customerTypeFilter,
+  () => {
+    currentPage.value = 1;
+    fetchCustomers();
   }
 );
 
@@ -292,106 +295,64 @@ onMounted(() => {
 <template>
   <!-- Bố cục bảng khách hàng  -->
   <div class="customer-layout">
+    <MsUpload :open="showUpload" @update:open="val => showUpload = val" @uploaded="handleUploaded" />
     <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <!-- Cột Checkbox -->
-            <th class="th-checkbox ">
-              <span 
-                class="ms-checkbox" 
-                :class="{ checked: isAllSelected }"
-                @click="toggleSelectAll"
-              ></span>
-            </th>
-            <!-- Các cột dữ liệu -->
-            <th
-              v-for="(header, index) in headers"
-              :key="index"
-              :style="{ width: header.width || 'auto' }"
-              class="th-data"
-              :class="{ active: sortColumn === header.key }"
-              @mouseenter="hoveredHeaderKey = header.key"
-              @mouseleave="hoveredHeaderKey = null"
-              @click="handleSort(header.key)"
-            >
-              <div class="header-content">
-                <span>{{ header.label }}</span>
-                <SortAscendingOutlined 
-                  v-if="hoveredHeaderKey === header.key" 
-                  class="sort-icon"
-                  :style="{ transform: sortColumn === header.key && sortDirection === 'desc' ? 'rotate(180deg)' : 'rotate(0deg)', color: sortColumn === header.key ? '#1890ff' : '#7c869c' }"
-                />
-              </div>
-            </th>
-            <!-- Cột trống cuối cùng để fill layout -->
-            <th class="th-actions"></th>
-          </tr>
-        </thead>
-        
-        <tbody>
-          <tr 
-            v-for="customer in customers" 
-            :key="customer.id"
-            @mouseenter="hoveredRowId = customer.id"
-            @mouseleave="hoveredRowId = null"
-            @dblclick="handleEditCustomer(customer)"
-            style="cursor: pointer;"
-          >
-            <td class="td-checkbox">
-              <span 
-                class="ms-checkbox" 
-                :class="{ checked: selectedIds.has(customer.id) }"
-                @click="toggleSelect(customer.id)"
-              ></span>
-            </td>
+      <MsTable
+        :headers="headers"
+        :items="customers"
+        :selected-ids="selectedIds"
+        :sort-column="sortColumn"
+        :sort-direction="sortDirection"
+        :is-loading="isLoading"
+        @sort="handleSort"
+        @select="toggleSelect"
+        @selectAll="toggleSelectAll"
+        @rowDblClick="handleEditCustomer"
+        @selection-change="onSelectionChange"
+      >
+        <!-- ...existing code... -->
 
-            <td class="text-dark">{{ customer.type }}</td>
-
-            <td class="text-left">{{ customer.code }}</td>
-
-            <td class="td-name text-left">{{ customer.name }}</td>
-
-            <td class="text-dark">{{ customer.taxCode }}</td>
-
-            <td class="td-addr text-dark" :title="customer.address">
-              {{ customer.address }}
-            </td>
-
-            <td class="text-left text-green" v-if="customer.phone !== '-'">
-              <div class="flex-row align-center gap-4">
-                <span class="icon-default-background icon-phone"></span>
-                {{ customer.phone }}
-              </div>
-            </td>
-            <td class="text-left" v-else>-</td>
-            <td class="text-left">{{ customer.email }}</td>
-
-            <td class="text-dark">{{ customer.lastDate }}</td>
-
-            <td class="text-dark">{{ customer.goodsCode }}</td>
-
-            <td class="text-dark" :title="customer.goodsName">
-              {{ customer.goodsName }}
-            </td>
-
-            <!-- Cột hành động - hiển thị khi hover -->
-            <td class="td-actions">
-              <div v-show="hoveredRowId === customer.id" class="action-buttons">
-                <MsButton 
-                  type="icon-only-danger" 
-                  title="Xóa"
-                  @click.stop="handleDelete(customer)"
-                >
-                  <template #icon-left>
-                    <DeleteOutlined />
-                  </template>
-                </MsButton>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        <!-- Ensure selectedItems is always up to date for Delete/Export -->
+        function onSelectionChange({ ids, items }) {
+          selectedItems.value = items;
+        }
+        <template #customerType="{ row }">
+          <span class="text-dark">{{ row.type }}</span>
+        </template>
+        <template #customerCode="{ row }">
+          <span class="text-left">{{ row.code }}</span>
+        </template>
+        <template #customerName="{ row }">
+          <span class="td-name text-left">{{ row.name }}</span>
+        </template>
+        <template #customerTaxCode="{ row }">
+          <span class="text-dark">{{ row.taxCode }}</span>
+        </template>
+        <template #customerShippingAddress="{ row }">
+          <span class="td-addr text-dark" :title="row.address">{{ row.address }}</span>
+        </template>
+        <template #customerPhoneNumber="{ row }">
+          <span v-if="row.phone !== '-'" class="text-left text-green">
+            <div class="flex-row align-center gap-4">
+              <span class="icon-default-background icon-phone"></span>
+              {{ row.phone }}
+            </div>
+          </span>
+          <span v-else class="text-left">-</span>
+        </template>
+        <template #customerEmail="{ row }">
+          <span class="text-left">{{ row.email }}</span>
+        </template>
+        <template #lastPurchaseDate="{ row }">
+          <span class="text-dark">{{ row.lastDate }}</span>
+        </template>
+        <template #purchasedItemCode="{ row }">
+          <span class="text-dark">{{ row.goodsCode }}</span>
+        </template>
+        <template #purchasedItemName="{ row }">
+          <span class="text-dark" :title="row.goodsName">{{ row.goodsName }}</span>
+        </template>
+      </MsTable>
     </div>
     <!-- Phần phân trang  -->
     <MsPagination
@@ -429,11 +390,15 @@ onMounted(() => {
   margin-top: 1px;
   border-top: 1px solid #d3d7de;
   padding: 0;
+  padding-bottom: 56px;   
+  display: flex;
+  flex-direction: column;
 }
 .table-container {
   width: 100%;
-  max-height: calc(100vh - 160px);
+  max-height: calc(100vh - 164px); 
   overflow: auto;
+  flex:1;
 }
 table {
   width: 100%;
@@ -455,6 +420,7 @@ tr {
 }
 .ms-checkbox {
   -webkit-transform: translateY(-50%);
+  transform: translateY(-50%);
   height: 16px;
   width: 16px;
   background-color: #fff;
@@ -519,9 +485,6 @@ tbody tr:hover {
   background-color: #e7ebfd;
 }
 
-tbody tr:hover .action-buttons {
-  display: flex !important;
-} 
 .text-left {
   text-align: left;
   color: #0f2fbd;
@@ -560,33 +523,6 @@ tbody tr:hover .td-checkbox {
   background-color: #ffffff;
   border-radius: 50%;
   margin-right: 6px;
-}
-
-.th-actions,
-.td-actions {
-  width: 80px;
-  min-width: 80px;
-  position: sticky;
-  right: 0;
-  background-color: #fff;
-  z-index: 2;
-  text-align: center;
-}
-
-.th-actions {
-  background-color: #fff;
-}
-
-tbody tr:hover .td-actions {
-  background-color: #e7ebfd;
-}
-
-
-.action-buttons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
 }
 
 .sort-icon {

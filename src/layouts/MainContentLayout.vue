@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, computed, onMounted, onUnmounted } from "vue";
 import MsButton from "../components/ms-button/MsButton.vue";
 import MsUpload from "../components/ms-upload/MsUpload.vue";
 import CustomerLayOut from "../views/customer/CustomerLayOut.vue";
@@ -7,8 +7,34 @@ import { FileExcelOutlined } from "@ant-design/icons-vue";
 import { useRouter } from "vue-router";
 import customerAPI from "../apis/components/CustomerAPI.js";
 import toastr from "toastr";
-import { Modal } from "ant-design-vue";
+import MsModal from "../components/ms-modal/MsModal.vue";
+import { Modal } from 'ant-design-vue';
 
+// Popup gán loại khách hàng
+const showAssignTypePopup = ref(false);
+const assignTypeValue = ref(null);
+const assignTypeOptions = [
+  { label: "VIP", value: "VIP" },
+  { label: "NBH01", value: "NBH01" },
+  { label: "LKHA", value: "LKHA" },
+];
+
+function openAssignTypePopup() {
+  assignTypeValue.value = null;
+  showAssignTypePopup.value = true;
+}
+
+async function handleAssignTypeApply() {
+  if (!assignTypeValue.value || selectedIds.value.length === 0) return;
+  try {
+    await customerAPI.assignType({ customerIds: selectedIds.value, customerType: assignTypeValue.value });
+    toastr.success("Gán loại khách hàng thành công");
+    showAssignTypePopup.value = false;
+    refreshKey.value += 1;
+  } catch (error) {
+    toastr.error("Gán loại khách hàng thất bại");
+  }
+}
 const router = useRouter();
 
 // Trạng thái hiển thị popup upload
@@ -17,11 +43,12 @@ const showUploadPopup = ref(false);
 // Cờ dùng để yêu cầu tải lại danh sách sau khi import
 const refreshKey = ref(0);
 
-// Trạng thái chọn bản ghi để hiển thị các nút hành động
+// Trạng thái chọn bản ghi để hiển thị các nút hành động (xóa nhiều và xuất)
 const hasSelection = ref(false);
 
 // Danh sách ID đã chọn
 const selectedIds = ref([]);
+// Mảng chứa toàn bộ object dữ liệu của các item được chọn
 const selectedItems = ref([]);
 
 // Trạng thái xử lý
@@ -31,6 +58,22 @@ const isExportingCsv = ref(false);
 // Trạng thái tìm kiếm & lọc
 const searchKeyword = ref("");
 let searchTimeout;
+
+// Trạng thái lọc theo loại khách hàng
+const customerTypeFilter = ref(null);
+const showCustomerTypeDropdown = ref(false);
+const customerTypeOptions = [
+  { label: 'Tất cả khách hàng', value: null },
+  { label: 'VIP', value: 'VIP' },
+  { label: 'LKHA', value: 'LKHA' },
+  { label: 'NBH01', value: 'NBH01' },
+];
+
+// Lấy label hiển thị
+const selectedCustomerTypeLabel = computed(() => {
+  const option = customerTypeOptions.find(opt => opt.value === customerTypeFilter.value);
+  return option ? option.label : 'Tất cả khách hàng';
+});
 
 // Theo dõi searchKeyword để gọi API với trì hoãn
 watch(searchKeyword, (newValue) => {
@@ -62,7 +105,7 @@ async function handleDeleteMultiple() {
     title: "Xác nhận xóa",
     content: `Bạn có chắc muốn xóa ${selectedIds.value.length} khách hàng đã chọn?`,
     centered: true,
-    okText: "Xóa",
+    okText: "Xóa",  
     okType: "danger",
     cancelText: "Hủy",
     autoFocusButton: "cancel",
@@ -141,6 +184,8 @@ function handleExportCsv() {
           ].map(escapeCsv).join(","));
 
           const csvContent = [headers.join(","), ...lines].join("\n");
+          // Binary Large Object
+          // Tạo file CSV (UTF-8 + tiếng Việt chuẩn) từ biến csvContent
           const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
 
           const url = window.URL.createObjectURL(blob);
@@ -176,6 +221,35 @@ function handleSelectionChange(payload) {
   selectedItems.value = Array.isArray(items) ? items : [];
   hasSelection.value = selectedIds.value.length > 0;
 }
+
+// Xử lý thay đổi loại khách hàng
+function handleCustomerTypeChange(value) {
+  // Nếu chọn 'Tất cả khách hàng' thì truyền null, còn lại truyền đúng mã loại
+  customerTypeFilter.value = value === null ? null : value;
+  showCustomerTypeDropdown.value = false;
+  refreshKey.value += 1; // Trigger refresh để CustomerLayOut fetch lại với filter mới
+}
+
+// Toggle dropdown
+function toggleCustomerTypeDropdown() {
+  showCustomerTypeDropdown.value = !showCustomerTypeDropdown.value;
+}
+
+// Đóng dropdown khi click ra ngoài
+function handleClickOutside(event) {
+  const dropdown = event.target.closest('.customer-dropdown');
+  if (!dropdown && showCustomerTypeDropdown.value) {
+    showCustomerTypeDropdown.value = false;
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <template>
@@ -184,24 +258,37 @@ function handleSelectionChange(payload) {
       <!-- Bố cục thanh công cụ (phần trái) -->
       <div class="toolbar-left flex-row align-center">
         <!-- Dropdown Khách hàng -->
-        <div class="customer-dropdown flex-row align-center">
+        <div class="customer-dropdown flex-row align-center" @click="toggleCustomerTypeDropdown">
           <div class="icon-default icon-folder"></div>
-          <div class="content-customer">Tất cả khách hàng</div>
+          <div class="content-customer">{{ selectedCustomerTypeLabel }}</div>
           <div class="icon-default icon-down"></div>
+          <!-- Dropdown menu -->
+          <div v-if="showCustomerTypeDropdown" class="customer-type-dropdown-menu">
+            <div 
+              v-for="option in customerTypeOptions" 
+              :key="option.value"
+              class="dropdown-menu-item"
+              :class="{ active: customerTypeFilter === option.value }"
+              @click.stop="handleCustomerTypeChange(option.value)"
+            >
+              {{ option.label }}
+              <span v-if="customerTypeFilter === option.value" class="check-icon">✓</span>
+            </div>
+          </div>
         </div>
         <!-- Nhóm hành động -->
         <div class="action-group flex-row align-center">
           <span class="action-text">Sửa</span>
           <span class="icon-default icon-reload"></span>
         </div>
-        <!-- Nút Xóa nhiều -->
+        <!-- Nút Xóa -->
         <MsButton
           class="btn-delete-multiple align-center justify-content-center" 
           type="primary"
           v-show="hasSelection"
           :disabled="isDeletingMany"
           @click="handleDeleteMultiple"
-          >Xóa nhiều</MsButton
+          >Xóa</MsButton
         >
         <!-- Nút Xuất từ CSV -->
         <MsButton
@@ -216,6 +303,17 @@ function handleSelectionChange(payload) {
           </template>
           Xuất CSV
         </MsButton>
+
+          <!-- Nút Gán loại khách hàng -->
+          <MsButton
+            class="btn-assign-type align-center justify-content-center"
+            type="primary"
+            v-show="hasSelection"
+            :disabled="isDeletingMany"
+            @click="openAssignTypePopup"
+          > 
+            Gán loại khách hàng
+          </MsButton>
       </div>
       <!-- Bố cục thanh công cụ (phần phải) -->
       <div class="toolbar-right flex-row align-center">
@@ -266,6 +364,7 @@ function handleSelectionChange(payload) {
     <!-- Giao diện danh sách khách hàng hiển thị bên dưới thanh công cụ -->
     <CustomerLayOut
       :searchKeyword="searchKeyword"
+      :customerTypeFilter="customerTypeFilter"
       :refresh-key="refreshKey"
       @selection-change="handleSelectionChange"
     />
@@ -276,10 +375,32 @@ function handleSelectionChange(payload) {
       @update:open="(val) => (showUploadPopup = val)"
       @uploaded="handleImported"
     />
+    <!-- Popup Gán loại khách hàng -->
+    <MsModal
+      v-model="showAssignTypePopup"
+      title="Gán loại khách hàng"
+      centered
+      :footer="null"
+      width="400px"
+    >
+      <div style="margin-bottom: 24px;">
+        <div v-for="option in assignTypeOptions" :key="option.value" style="margin-bottom: 12px;">
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="radio" v-model="assignTypeValue" :value="option.value" style="margin-right: 8px;" />
+            {{ option.label }}
+          </label>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <MsButton type="secondary" @click="showAssignTypePopup = false">Hủy</MsButton>
+        <MsButton type="primary" :disabled="!assignTypeValue" @click="handleAssignTypeApply" style="width: 100px;">Áp dụng</MsButton>
+      </div>
+    </MsModal>
   </div>
 </template>
 <style scoped>
 .toolbar-left .customer-dropdown {
+  position: relative;
   width: 185px;
   height: 32px;
   background-color: #fff;
@@ -297,6 +418,10 @@ function handleSelectionChange(payload) {
   height: 32px;
   margin-left: 10px;
   transform: translateX(10px);
+}
+.btn-assign-type{
+  margin-left: 20px;
+  width: 140px !important;
 }
 .content-customer {
   font-size: 13px;
@@ -538,6 +663,48 @@ function handleSelectionChange(payload) {
 }
 .btn-delete-multiple:hover {
   background-color: rgb(226, 221, 221); 
+}
+
+.customer-type-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid #d3d7de;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  min-width: 185px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.dropdown-menu-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: Inter, sans-serif;
+  color: #1f2229;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.dropdown-menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+.dropdown-menu-item.active {
+  background-color: #e7ebfd;
+  color: #4262f0;
+  font-weight: 500;
+}
+
+.check-icon {
+  color: #4262f0;
+  font-weight: bold;
 }
 
 </style>

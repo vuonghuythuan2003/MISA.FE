@@ -2,8 +2,9 @@
 import { HomeOutlined } from "@ant-design/icons-vue";
 import avatarImg from "../assets/images/avatar.png";
 import { useRoute, useRouter } from 'vue-router'
-
+// dùng để điều hướng chuyển trang khi click vào navigation
 const router = useRouter()
+// dùng để lấy thông tin route hiện tại
 const route = useRoute()
 
 function goToHome() {
@@ -12,8 +13,8 @@ function goToHome() {
 
 function goToOpportunity() {
   router.push('/opportunity')
-}
-
+} 
+// kiểm tra menu nào đang được chọn để active
 const isActive = (path) => route.path.startsWith(path)
 
 </script>

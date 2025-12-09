@@ -226,7 +226,7 @@ defineExpose({
   min-height: 56px;
   background-color: #ffffff;
   border-top: 1px solid #d3d7de;
-  position: fixed;
+  position: sticky;
   left: 0;
   right: 0;
   bottom: 0;

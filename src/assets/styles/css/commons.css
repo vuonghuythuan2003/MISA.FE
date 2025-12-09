@@ -63,7 +63,7 @@
   content: '✓';
   color: #FFFFFF;
   font-weight: bold;
-  margin-right: 12px;
+  margin-right: 10px;
   font-size: 18px;
 }
 
@@ -76,7 +76,7 @@
   content: '⚠';
   color: #FFFFFF;
   font-weight: bold;
-  margin-right: 12px;
+  margin-right: 10px;
   font-size: 18px;
 }
 
@@ -89,7 +89,7 @@
   content: '⚠';
   color: #FFFFFF;
   font-weight: bold;
-  margin-right: 12px;
+  margin-right: 10px;
   font-size: 18px;
 }
 
@@ -102,7 +102,7 @@
   content: 'ⓘ';
   color: #FFFFFF;
   font-weight: bold;
-  margin-right: 12px;
+  margin-right: 10px;
   font-size: 18px;
 }
 

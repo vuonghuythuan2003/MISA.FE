@@ -84,15 +84,18 @@ const handleChange = info => {
 // Upload CSV qua API customer/import
 const handleUpload = async ({ file, onSuccess, onError }) => {
   try {
-    await customerAPI.importFromCsv(file);
+    const response = await customerAPI.importFromCsv(file);
+    // Giả sử API trả về { successCount, failCount }
+    const { successCount = 0, failCount = 0 } = response.data || {};
     onSuccess && onSuccess({});
+    emit('uploaded', { successCount, failCount });
     message.success(`Nhập tệp ${file.name} thành công.`);
-    emit('uploaded');
     handleClose();
   } catch (err) {
     console.error('Upload CSV error:', err);
     message.error(`Nhập tệp ${file.name} thất bại.`);
     onError && onError(err);
+    emit('uploaded', { successCount: 0, failCount: 0 });
   }
 };
 

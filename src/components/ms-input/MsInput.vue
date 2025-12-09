@@ -318,7 +318,7 @@ defineExpose({
 }
 
 .ms-input__error {
-  color: #faad14;
+  color: #e53935;
 }
 
 .ms-input__helper {
@@ -326,12 +326,12 @@ defineExpose({
 }
 
 .ms-input--error .ms-input__field {
-  border-color: #faad14;
+  border-color: #e53935;
 }
 
 .ms-input--error .ms-input__field:focus {
-  border-color: #faad14;
-  box-shadow: 0 0 0 3px rgba(250, 173, 20, 0.1);
+  border-color: #e53935;
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
 }
 
 .ms-input--disabled {

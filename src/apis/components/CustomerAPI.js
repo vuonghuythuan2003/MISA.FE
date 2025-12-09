@@ -26,7 +26,6 @@ class CustomerAPI extends BaseAPI {
     importFromCsv(file) {
         const formData = new FormData();
         formData.append('file', file);
-        
         return api.post(`/${this.controller}/import`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
@@ -74,8 +73,17 @@ class CustomerAPI extends BaseAPI {
     }
 
     /**
-     * Xóa mềm nhiều khách hàng
-     * @param {Array<string>} ids - Danh sách ID khách hàng cần xóa
+     * Gán loại khách hàng cho nhiều bản ghi
+     * @param {object} payload - { customerIds: Array<string>, customerType: string }
+     * @returns {Promise} Response từ API
+     */
+    assignType(payload) {
+        return api.post(`/${this.controller}/assign-type`, payload);
+    }
+
+    /**
+     * Xóa nhiều khách hàng
+     * @param {Array<string>} ids - Mảng ID khách hàng
      * @returns {Promise} Response từ API
      */
     deleteMany(ids) {

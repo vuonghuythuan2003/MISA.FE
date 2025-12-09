@@ -12,6 +12,7 @@
       class="date-picker-custom"
       :class="{ 'date-picker-error': error }"
       :get-popup-container="(trigger) => trigger.parentElement"
+      :tabindex="tabindex"
       @change="handleChange"
     >
       <template #suffixIcon>
@@ -62,6 +63,10 @@ const props = defineProps({
   picker: {
     type: String,
     default: "date",
+  },
+  tabindex: {
+    type: [String, Number],
+    default: undefined,
   },
 });
 

@@ -111,6 +111,10 @@ const loadCustomerData = async () => {
       };
       avatarPreview.value = customer.customerAvatarUrl || null;
       document.title = `Chỉnh sửa - ${customer.customerName}`;
+      
+      // Focus vào Tên khách hàng sau khi load data xong
+      await nextTick();
+      focusField(customerNameRef?.value ?? customerNameRef);
     }
   } catch (error) {
     console.error('Lỗi khi tải dữ liệu khách hàng:', error);
@@ -152,18 +156,16 @@ const focusFirstInvalid = async () => {
 
 const validateRequired = () => {
   const checks = [
-    { key: "customerType", value: formData.value.customerType, ref: customerTypeRef, message: "Loại khách hàng không được để trống" },
     { key: "customerName", value: formData.value.customerName, ref: customerNameRef, message: "Tên khách hàng không được để trống" },
     { key: "customerPhoneNumber", value: formData.value.phone, ref: phoneRef, message: "Số điện thoại không được để trống" },
     { key: "customerEmail", value: formData.value.email, ref: emailRef, message: "Email không được để trống" },
-    { key: "customerAddress", value: formData.value.address, ref: shippingAddressRef, message: "Địa chỉ giao hàng không được để trống" },
   ];
 
   for (const item of checks) {
     if (!item.value || String(item.value).trim() === "") {
       validationErrors.value[item.key] = item.message;
       focusField(item.ref?.value ?? item.ref);
-      toastr.error(item.message);
+      // Không hiển thị toast khi validate required, chỉ hiển thị lỗi tại control
       return false;
     }
   }
@@ -325,7 +327,7 @@ onMounted(() => {
           <!-- Cột trái -->
           <div class="col-left">
             <div class="form-item flex-row align-center">
-              <label class="form-label">Loại khách hàng <span class="required">*</span></label>
+              <label class="form-label">Loại khách hàng</label>
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.customerType"
@@ -333,6 +335,7 @@ onMounted(() => {
                   readonly
                   :error="validationErrors.customerType"
                   ref="customerTypeRef"
+                  tabindex="1"
                 />
               </div>
             </div>
@@ -345,6 +348,7 @@ onMounted(() => {
                   placeholder="Mã tự sinh"
                   :error="validationErrors.customerCode"
                   :readonly="true"
+                  tabindex="2"
                 />
               </div>
             </div>
@@ -357,6 +361,7 @@ onMounted(() => {
                   :required="true"
                   :error="validationErrors.customerName"
                   ref="customerNameRef"
+                  tabindex="3"
                 />
               </div>
             </div>
@@ -369,6 +374,7 @@ onMounted(() => {
                   type="tel"
                   :error="validationErrors.customerPhoneNumber"
                   ref="phoneRef"
+                  tabindex="5"
                 />
               </div>
             </div>
@@ -381,6 +387,7 @@ onMounted(() => {
                   type="email"
                   :error="validationErrors.customerEmail"
                   ref="emailRef"
+                  tabindex="6"
                 />
               </div>
             </div>
@@ -389,12 +396,13 @@ onMounted(() => {
           <!-- Cột phải -->
           <div class="col-right">
             <div class="form-item flex-row align-center">
-              <label class="form-label">Địa chỉ (Giao hàng) <span class="required">*</span></label>
+              <label class="form-label">Địa chỉ (Giao hàng)</label>
               <div class="input-wrapper">
                 <MsInput
                   v-model="formData.address"
                   :error="validationErrors.customerAddress"
                   ref="shippingAddressRef"
+                  tabindex="4"
                 />
               </div>
             </div>
@@ -406,18 +414,20 @@ onMounted(() => {
                   v-model="formData.taxCode"
                   :error="validationErrors.customerTaxCode"
                   ref="taxCodeRef"
+                  tabindex="7"
                 />
               </div>
             </div>
 
             <div class="form-item flex-row align-center">
               <label class="form-label">Ngày mua hàng gần nhất</label>
-              <div class="input-wrapper">
+              <div class="input-wrapper-date">
                 <MsDate
                   v-model="formData.lastPurchaseDate"
                   :error="validationErrors.lastPurchaseDate"
                   placeholder="dd/mm/yyyy"
                   format="DD/MM/YYYY"
+                  tabindex="8"
                 />
               </div>
             </div>
@@ -428,6 +438,7 @@ onMounted(() => {
                 <MsInput
                   v-model="formData.purchasedGoods"
                   :error="validationErrors.purchasedItemCode"
+                  tabindex="9"
                 />
               </div>
             </div>
@@ -438,6 +449,7 @@ onMounted(() => {
                 <MsInput
                   v-model="formData.purchasedGoodsName"
                   :error="validationErrors.purchasedItemName"
+                  tabindex="10"
                 />
               </div>
             </div>
@@ -642,6 +654,26 @@ onMounted(() => {
 .input-wrapper :deep(.ms-input__message) {
   display: block;
   margin-top: 4px;
+  color: #e53935 !important;
+}
+
+.input-wrapper :deep(.ms-input--error .ms-input__field) {
+  border-color: #e53935 !important;
+}
+
+.input-wrapper :deep(.ms-input--error .ms-input__field:focus) {
+  border-color: #e53935 !important;
+  box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.1) !important;
+}
+
+.input-wrapper-date {
+  width: 100%;
+  border-radius: 2px !important;
+  height: 32px;
+}
+
+.input-wrapper-date :deep(.ms-input__message) {
+  color: #e53935 !important;
 }
 
 .required {
